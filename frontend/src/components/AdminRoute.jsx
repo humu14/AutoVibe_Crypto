@@ -1,0 +1,15 @@
+import { Navigate, Outlet } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+const AdminRoute = () => {
+  const { userInfo } = useSelector((state) => state.auth);
+  const isAdmin = userInfo?.admin || userInfo?.role === 'admin';
+  if (!isAdmin) {
+    toast.error("Admin access only");
+    return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
+};
+
+export default AdminRoute;
