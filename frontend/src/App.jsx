@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import HeaderBar from './components/HeaderBar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import GlobalLoadingOverlay from './components/GlobalLoadingOverlay';
 import { Toaster } from 'sonner';
 import { useStockSync } from './hooks/useStockSync';
 
@@ -14,6 +15,7 @@ function App() {
 
   return (
     <div className="App min-h-screen flex flex-col">
+      <GlobalLoadingOverlay />
       <ScrollToTop />
       {!isAdminPage && <HeaderBar />}
       

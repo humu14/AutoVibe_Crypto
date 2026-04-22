@@ -39,6 +39,9 @@ import TwoFactorScreen from './screens/TwoFactorScreen'
 import KeyManagementScreen from './screens/admin/KeyManagementScreen'
 import MyPostsScreen from './screens/MyPostsScreen.jsx'
 import PublicPostsScreen from './screens/PublicPostsScreen.jsx'
+import { installGlobalFetchTracker } from './utils/installGlobalFetchTracker.js'
+
+installGlobalFetchTracker(store)
 
 const router = createBrowserRouter(
   createRoutesFromElements(

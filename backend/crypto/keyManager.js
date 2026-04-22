@@ -13,6 +13,15 @@ import { sha256 } from './sha256.js';
 let keyCache = {};
 let keyEncryptionPair = null;
 
+function hasPersistentKeyEncryptionConfig() {
+  return Boolean(
+    process.env.KEY_ENCRYPTION_PUBLIC_N &&
+    process.env.KEY_ENCRYPTION_PUBLIC_E &&
+    process.env.KEY_ENCRYPTION_PRIVATE_N &&
+    process.env.KEY_ENCRYPTION_PRIVATE_D
+  );
+}
+
 function getKeyEncryptionPair() {
   if (keyEncryptionPair) {
     return keyEncryptionPair;
@@ -55,10 +64,51 @@ function revealPrivateKeyFromStorage(privateKeyField) {
   ) {
     const pair = getKeyEncryptionPair();
     const plaintext = rsa.decryptString(privateKeyField.ciphertext, pair.privateKey);
-    return JSON.parse(plaintext);
+    try {
+      return JSON.parse(plaintext);
+    } catch (error) {
+      throw new Error('Stored private key payload could not be parsed after decryption');
+    }
   }
 
   return privateKeyField;
+}
+
+function isPrivateKeyShapeValid(privateKey, algorithm) {
+  if (algorithm === 'RSA') {
+    return Boolean(privateKey && typeof privateKey === 'object' && privateKey.n && privateKey.d);
+  }
+
+  if (algorithm === 'ECC') {
+    return typeof privateKey === 'string' && privateKey.length > 0;
+  }
+
+  return false;
+}
+
+function canRevealStoredPrivateKey(privateKeyField, algorithm) {
+  try {
+    const privateKey = revealPrivateKeyFromStorage(privateKeyField);
+    return isPrivateKeyShapeValid(privateKey, algorithm);
+  } catch {
+    return false;
+  }
+}
+
+async function createActiveKey(config, version = 1) {
+  const keyPair = config.generator();
+  const privateKey = config.algorithm === 'RSA' ? keyPair.privateKey : keyPair.privateKey;
+
+  return Key.create({
+    keyId: generateKeyId(config.algorithm, config.purpose),
+    algorithm: config.algorithm,
+    purpose: config.purpose,
+    publicKey: config.algorithm === 'RSA' ? keyPair.publicKey : keyPair.publicKey,
+    privateKey: protectPrivateKeyAtRest(privateKey, config.algorithm),
+    status: 'ACTIVE',
+    version,
+    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
+  });
 }
 
 /**
@@ -95,25 +145,33 @@ async function initializeKeys() {
 
     if (!existingKey) {
       console.log(`  Generating ${config.algorithm} key for ${config.purpose}...`);
-      const keyPair = config.generator();
-      
-      const keyDoc = await Key.create({
-        keyId: generateKeyId(config.algorithm, config.purpose),
-        algorithm: config.algorithm,
-        purpose: config.purpose,
-        publicKey: config.algorithm === 'RSA' ? keyPair.publicKey : keyPair.publicKey,
-        privateKey: protectPrivateKeyAtRest(
-          config.algorithm === 'RSA' ? keyPair.privateKey : keyPair.privateKey,
-          config.algorithm
-        ),
-        status: 'ACTIVE',
-        version: 1,
-        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
-      });
+      const keyDoc = await createActiveKey(config, 1);
 
       console.log(`  ✅ ${config.algorithm} key created: ${keyDoc.keyId}`);
     } else {
-      console.log(`  ✅ ${config.algorithm} key for ${config.purpose} already exists: ${existingKey.keyId}`);
+      const canUseExisting = canRevealStoredPrivateKey(existingKey.privateKey, config.algorithm);
+
+      if (canUseExisting) {
+        console.log(`  ✅ ${config.algorithm} key for ${config.purpose} already exists: ${existingKey.keyId}`);
+        continue;
+      }
+
+      if (!hasPersistentKeyEncryptionConfig()) {
+        console.warn(
+          `  ⚠️ Existing ${config.algorithm} key for ${config.purpose} cannot be decrypted with runtime-only key encryption pair. Regenerating...`
+        );
+
+        existingKey.status = 'REVOKED';
+        await existingKey.save();
+
+        const regenerated = await createActiveKey(config, existingKey.version + 1);
+        console.log(`  ✅ ${config.algorithm} key regenerated: ${regenerated.keyId}`);
+        continue;
+      }
+
+      throw new Error(
+        `Stored ${config.algorithm} private key for ${config.purpose} is not decryptable. Check KEY_ENCRYPTION_* environment variables.`
+      );
     }
   }
 
@@ -130,14 +188,19 @@ async function refreshKeyCache() {
   keyCache = {};
   for (const key of activeKeys) {
     const cacheKey = `${key.algorithm}:${key.purpose}`;
-    keyCache[cacheKey] = {
-      keyId: key.keyId,
-      algorithm: key.algorithm,
-      purpose: key.purpose,
-      publicKey: key.publicKey,
-      privateKey: revealPrivateKeyFromStorage(key.privateKey),
-      version: key.version
-    };
+    try {
+      const privateKey = revealPrivateKeyFromStorage(key.privateKey);
+      keyCache[cacheKey] = {
+        keyId: key.keyId,
+        algorithm: key.algorithm,
+        purpose: key.purpose,
+        publicKey: key.publicKey,
+        privateKey,
+        version: key.version
+      };
+    } catch {
+      console.warn(`Skipping undecryptable key during cache refresh: ${key.keyId}`);
+    }
   }
 }
 
