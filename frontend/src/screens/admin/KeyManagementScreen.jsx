@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
+import AdminPanelScreen from './AdminPanelScreen.jsx';
+import { FaKey, FaExclamationTriangle, FaTrash } from 'react-icons/fa';
+import { Button, Modal } from 'react-bootstrap';
 
 /**
  * Admin Key Management Screen
@@ -10,6 +13,12 @@ const KeyManagementScreen = () => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+
+  // Modal states
+  const [showRotateModal, setShowRotateModal] = useState(false);
+  const [keyToRotate, setKeyToRotate] = useState(null);
+  const [showRevokeModal, setShowRevokeModal] = useState(false);
+  const [keyToRevoke, setKeyToRevoke] = useState(null);
 
   useEffect(() => {
     fetchKeys();
@@ -38,11 +47,21 @@ const KeyManagementScreen = () => {
     }
   };
 
-  const handleRotate = async (keyId) => {
-    if (!confirm(`Are you sure you want to rotate key ${keyId}?`)) return;
-    setActionLoading(keyId);
+  const handleRotateClick = (keyId) => {
+    setKeyToRotate(keyId);
+    setShowRotateModal(true);
+  };
+
+  const handleCloseRotateModal = () => {
+    setShowRotateModal(false);
+    setKeyToRotate(null);
+  };
+
+  const confirmRotate = async () => {
+    if (!keyToRotate) return;
+    setActionLoading(keyToRotate);
     try {
-      const res = await fetch(`/api/keys/rotate/${keyId}`, { method: 'POST' });
+      const res = await fetch(`/api/keys/rotate/${keyToRotate}`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         toast.success(`Key rotated: ${data.oldKeyId} → ${data.newKeyId}`);
@@ -55,17 +74,28 @@ const KeyManagementScreen = () => {
       toast.error('Rotation failed');
     } finally {
       setActionLoading(null);
+      handleCloseRotateModal();
     }
   };
 
-  const handleRevoke = async (keyId) => {
-    if (!confirm(`WARNING: Revoking key ${keyId} will make data encrypted with it unrecoverable. Continue?`)) return;
-    setActionLoading(keyId);
+  const handleRevokeClick = (keyId) => {
+    setKeyToRevoke(keyId);
+    setShowRevokeModal(true);
+  };
+
+  const handleCloseRevokeModal = () => {
+    setShowRevokeModal(false);
+    setKeyToRevoke(null);
+  };
+
+  const confirmRevoke = async () => {
+    if (!keyToRevoke) return;
+    setActionLoading(keyToRevoke);
     try {
-      const res = await fetch(`/api/keys/revoke/${keyId}`, { method: 'POST' });
+      const res = await fetch(`/api/keys/revoke/${keyToRevoke}`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Key revoked: ${keyId}`);
+        toast.success(`Key revoked: ${keyToRevoke}`);
         fetchKeys();
         fetchStatus();
       } else {
@@ -75,165 +105,262 @@ const KeyManagementScreen = () => {
       toast.error('Revocation failed');
     } finally {
       setActionLoading(null);
+      handleCloseRevokeModal();
     }
   };
 
-  const getStatusColor = (s) => {
-    if (s === 'ACTIVE') return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-    if (s === 'ROTATED') return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-    return 'bg-red-500/20 text-red-400 border-red-500/30';
+  const getStatusStyle = (s) => {
+    if (s === 'ACTIVE') return 'bg-green-100 text-green-800 border-green-200';
+    if (s === 'ROTATED') return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-red-100 text-red-800 border-red-200';
   };
 
-  const getAlgoColor = (a) => {
+  const getAlgoStyle = (a) => {
     return a === 'RSA' 
-      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      : 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      ? 'bg-blue-100 text-blue-800 border-blue-200'
+      : 'bg-purple-100 text-purple-800 border-purple-200';
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
-      </div>
+      <>
+        <AdminPanelScreen />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <span className="text-3xl">🔐</span>
-          Key Management
-        </h1>
-        <p className="text-gray-400 mt-2">
-          Manage encryption keys for RSA and ECC algorithms
-        </p>
-      </div>
-
-      {/* Status Cards */}
-      {status && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          {[
-            { label: 'Total Keys', value: status.total, color: 'from-blue-600 to-blue-800' },
-            { label: 'Active', value: status.active, color: 'from-emerald-600 to-emerald-800' },
-            { label: 'Rotated', value: status.rotated, color: 'from-yellow-600 to-yellow-800' },
-            { label: 'Revoked', value: status.revoked, color: 'from-red-600 to-red-800' },
-            { label: 'Expiring Soon', value: status.expiringSoon, color: 'from-orange-600 to-orange-800' },
-          ].map((card, i) => (
-            <div key={i} className={`rounded-xl bg-gradient-to-br ${card.color} p-4 shadow-lg`}>
-              <p className="text-white/70 text-sm">{card.label}</p>
-              <p className="text-3xl font-bold text-white mt-1">{card.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Keys Table */}
-      <div className="bg-gray-900/80 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-700/50">
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Key ID</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Algorithm</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Purpose</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Status</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Version</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Created</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Expires</th>
-                <th className="text-left py-4 px-6 text-gray-400 text-sm font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keys.map((key) => (
-                <tr key={key.keyId} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                  <td className="py-4 px-6">
-                    <code className="text-xs text-gray-300 bg-gray-800 px-2 py-1 rounded">
-                      {key.keyId}
-                    </code>
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getAlgoColor(key.algorithm)}`}>
-                      {key.algorithm}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-gray-300 text-sm">{key.purpose}</td>
-                  <td className="py-4 px-6">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(key.status)}`}>
-                      {key.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-gray-300 text-center">v{key.version}</td>
-                  <td className="py-4 px-6 text-gray-400 text-sm">
-                    {new Date(key.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="py-4 px-6 text-gray-400 text-sm">
-                    {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : '—'}
-                  </td>
-                  <td className="py-4 px-6">
-                    {key.status === 'ACTIVE' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleRotate(key.keyId)}
-                          disabled={actionLoading === key.keyId}
-                          className="px-3 py-1.5 text-xs font-medium rounded-lg 
-                            bg-yellow-500/10 text-yellow-400 border border-yellow-500/30
-                            hover:bg-yellow-500/20 transition-colors disabled:opacity-50"
-                          id={`rotate-${key.keyId}`}
-                        >
-                          {actionLoading === key.keyId ? '...' : 'Rotate'}
-                        </button>
-                        <button
-                          onClick={() => handleRevoke(key.keyId)}
-                          disabled={actionLoading === key.keyId}
-                          className="px-3 py-1.5 text-xs font-medium rounded-lg 
-                            bg-red-500/10 text-red-400 border border-red-500/30
-                            hover:bg-red-500/20 transition-colors disabled:opacity-50"
-                          id={`revoke-${key.keyId}`}
-                        >
-                          Revoke
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {keys.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            No encryption keys found. The system will generate keys on server startup.
+    <>
+      <AdminPanelScreen />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-4">
+              <FaKey className="text-blue-600" />
+              Manage Cryptographic Keys
+            </h1>
+            <p className="text-xl text-gray-600">
+              View, rotate, and revoke encryption keys for RSA and ECC algorithms
+            </p>
+            <div className="w-24 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
           </div>
-        )}
+
+          {/* Status Cards */}
+          {status && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+              {[
+                { label: 'Total Keys', value: status.total, color: 'bg-blue-50 border-blue-100 text-blue-600' },
+                { label: 'Active', value: status.active, color: 'bg-green-50 border-green-100 text-green-600' },
+                { label: 'Rotated', value: status.rotated, color: 'bg-yellow-50 border-yellow-100 text-yellow-600' },
+                { label: 'Revoked', value: status.revoked, color: 'bg-red-50 border-red-100 text-red-600' },
+                { label: 'Expiring Soon', value: status.expiringSoon, color: 'bg-orange-50 border-orange-100 text-orange-600' },
+              ].map((card, i) => (
+                <div key={i} className={`rounded-2xl shadow-sm border ${card.color.split(' ').slice(0,2).join(' ')} p-6 flex flex-col items-center justify-center`}>
+                  <p className="text-sm font-medium text-gray-600">{card.label}</p>
+                  <p className={`text-3xl font-bold mt-2 ${card.color.split(' ')[2]}`}>{card.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Keys Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key ID</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Algorithm</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {keys.map((key) => (
+                    <tr key={key.keyId} className="hover:bg-gray-50 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <code className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">
+                          {key.keyId}
+                        </code>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getAlgoStyle(key.algorithm)}`}>
+                          {key.algorithm}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{key.purpose}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyle(key.status)}`}>
+                          {key.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">v{key.version}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(key.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {key.status === 'ACTIVE' && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleRotateClick(key.keyId)}
+                              disabled={actionLoading === key.keyId}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 border border-yellow-300 rounded-md shadow-sm text-xs font-medium text-yellow-700 bg-white hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 transition-colors duration-200"
+                              id={`rotate-${key.keyId}`}
+                            >
+                              {actionLoading === key.keyId ? '...' : 'Rotate'}
+                            </button>
+                            <button
+                              onClick={() => handleRevokeClick(key.keyId)}
+                              disabled={actionLoading === key.keyId}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 border border-red-300 rounded-md shadow-sm text-xs font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-colors duration-200"
+                              id={`revoke-${key.keyId}`}
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {keys.length === 0 && (
+              <div className="text-center py-20 text-gray-500">
+                <FaKey className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">No encryption keys found</h3>
+                <p>The system will generate keys on server startup.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Info Panel */}
+          <div className="mt-8 grid md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-blue-600 flex items-center gap-2 mb-3">
+                <span>🔑</span> RSA Keys
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                RSA (1024-bit) keys are used for encrypting <strong className="text-gray-900">user personal data</strong> (name, email, phone) 
+                and <strong className="text-gray-900">order shipping addresses</strong>. RSA provides secure asymmetric encryption 
+                based on the mathematical difficulty of factoring large prime numbers.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-purple-600 flex items-center gap-2 mb-3">
+                <span>🔐</span> ECC Keys
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                ECC (secp256k1) keys are used for encrypting <strong className="text-gray-900">product data</strong> (name, description, brand) 
+                and <strong className="text-gray-900">review comments</strong> using EC-ElGamal encryption. ECC provides equivalent 
+                security to RSA with significantly smaller key sizes.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Info Panel */}
-      <div className="mt-8 grid md:grid-cols-2 gap-6">
-        <div className="bg-gray-900/60 rounded-xl border border-gray-700/50 p-6">
-          <h3 className="text-lg font-semibold text-blue-400 flex items-center gap-2 mb-3">
-            <span>🔑</span> RSA Keys
-          </h3>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            RSA (1024-bit) keys are used for encrypting <strong className="text-gray-200">user personal data</strong> (name, email, phone) 
-            and <strong className="text-gray-200">order shipping addresses</strong>. RSA provides secure asymmetric encryption 
-            based on the mathematical difficulty of factoring large prime numbers.
-          </p>
-        </div>
-        <div className="bg-gray-900/60 rounded-xl border border-gray-700/50 p-6">
-          <h3 className="text-lg font-semibold text-purple-400 flex items-center gap-2 mb-3">
-            <span>🔐</span> ECC Keys
-          </h3>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            ECC (secp256k1) keys are used for encrypting <strong className="text-gray-200">product data</strong> (name, description, brand) 
-            and <strong className="text-gray-200">review comments</strong> using EC-ElGamal encryption. ECC provides equivalent 
-            security to RSA with significantly smaller key sizes.
-          </p>
-        </div>
-      </div>
-    </div>
+      {/* Rotate Key Confirmation Modal */}
+      <Modal 
+        show={showRotateModal} 
+        onHide={handleCloseRotateModal} 
+        size="md"
+        className="modal-centered"
+        backdrop="static"
+        keyboard={false}
+        centered
+      >
+        <Modal.Header closeButton className="bg-yellow-50 border-yellow-200">
+          <Modal.Title className="flex items-center gap-2 text-yellow-800">
+            <FaExclamationTriangle className="text-yellow-600" />
+            Rotate Key
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center py-4">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaKey className="w-8 h-8 text-yellow-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Rotate key {keyToRotate}?
+            </h3>
+            <p className="text-gray-600">
+              This will generate a new active key for this purpose. The current key will be marked as rotated but will still be available for decrypting historical data.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="bg-yellow-50 border-yellow-200">
+          <Button variant="secondary" onClick={handleCloseRotateModal}>
+            Cancel
+          </Button>
+          <Button 
+            variant="warning" 
+            onClick={confirmRotate}
+            disabled={actionLoading === keyToRotate}
+            className="bg-yellow-500 hover:bg-yellow-600 border-yellow-500 text-white"
+          >
+            {actionLoading === keyToRotate ? 'Rotating...' : 'Confirm Rotation'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Revoke Key Confirmation Modal */}
+      <Modal 
+        show={showRevokeModal} 
+        onHide={handleCloseRevokeModal} 
+        size="md"
+        className="modal-centered"
+        backdrop="static"
+        keyboard={false}
+        centered
+      >
+        <Modal.Header closeButton className="bg-red-50 border-red-200">
+          <Modal.Title className="flex items-center gap-2 text-red-800">
+            <FaTrash className="text-red-600" />
+            Revoke Key
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center py-4">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaExclamationTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Are you sure you want to revoke {keyToRevoke}?
+            </h3>
+            <p className="text-gray-600">
+              This action cannot be undone. Any data encrypted specifically with this key version will become <strong className="text-red-600">unrecoverable</strong>. Only proceed if this key has been compromised.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="bg-red-50 border-red-200">
+          <Button variant="secondary" onClick={handleCloseRevokeModal}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={confirmRevoke}
+            disabled={actionLoading === keyToRevoke}
+            className="bg-red-600 hover:bg-red-700 border-red-600 text-white"
+          >
+            {actionLoading === keyToRevoke ? 'Revoking...' : 'Revoke Key'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

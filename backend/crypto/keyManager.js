@@ -315,8 +315,35 @@ async function revokeKey(keyId) {
   const key = await Key.findOne({ keyId });
   if (!key) throw new Error('Key not found');
 
+  const wasActive = key.status === 'ACTIVE';
+
   key.status = 'REVOKED';
   await key.save();
+
+  // If we just revoked the currently active key, generate a replacement to prevent system crash
+  if (wasActive) {
+    let newKeyPair;
+    if (key.algorithm === 'RSA') {
+      newKeyPair = rsa.generateKeyPair(1024);
+    } else {
+      newKeyPair = ecc.generateKeyPair();
+    }
+
+    await Key.create({
+      keyId: generateKeyId(key.algorithm, key.purpose),
+      algorithm: key.algorithm,
+      purpose: key.purpose,
+      publicKey: key.algorithm === 'RSA' ? newKeyPair.publicKey : newKeyPair.publicKey,
+      privateKey: protectPrivateKeyAtRest(
+        key.algorithm === 'RSA' ? newKeyPair.privateKey : newKeyPair.privateKey,
+        key.algorithm
+      ),
+      status: 'ACTIVE',
+      version: key.version + 1,
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+    });
+    console.log(`🔑 Automatically generated replacement key for ${key.purpose}`);
+  }
 
   // Refresh cache
   await refreshKeyCache();

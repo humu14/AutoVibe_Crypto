@@ -18,6 +18,7 @@ import ReviewsIcon from '@mui/icons-material/Reviews';
 import HomeIcon from '@mui/icons-material/Home';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
@@ -36,7 +37,8 @@ const navigationItems = [
   { to: '/admin/orders', icon: <ListAltIcon />, text: 'Manage Orders' },
   { to: '/admin/productslist', icon: <InventoryIcon />, text: 'Manage Products' },
   { to: '/admin/reviewslist', icon: <ReviewsIcon />, text: 'Manage Reviews' },
-  { to: '/admin/sales', icon: <MonetizationOnIcon />, text: 'Sales and Analytics' }
+  { to: '/admin/sales', icon: <MonetizationOnIcon />, text: 'Sales and Analytics' },
+  { to: '/admin/keys', icon: <VpnKeyIcon />, text: 'Manage Keys' }
 ];
 
 const AdminPanelScreen = () => {

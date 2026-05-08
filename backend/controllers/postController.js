@@ -69,7 +69,10 @@ async function decryptPostData(post) {
     return obj;
   } catch (e) {
     console.error('Post decryption error:', e.message);
-    return post.toObject ? post.toObject() : post;
+    const obj = post.toObject ? post.toObject() : { ...post };
+    obj.title = '🔒 Unrecoverable Encrypted Title';
+    obj.content = 'This post\'s content cannot be decrypted because its encryption key is no longer available (e.g., the key was revoked or lost due to a server restart without persistent key encryption).';
+    return obj;
   }
 }
 

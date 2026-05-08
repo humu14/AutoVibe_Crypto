@@ -1,2 +1,7 @@
 node_modules
 .env
+
+# Project Reports
+report_diagrams/
+viva.md
+FULL_PROJECT_REPORT.md
