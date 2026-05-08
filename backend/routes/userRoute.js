@@ -12,7 +12,7 @@ import { resendOTP } from '../controllers/twoFactorController.js';
 
 const router = express.Router();
 
-// Public routes
+// public
 router.post('/', register);
 router.post('/auth', authUser);
 router.post('/verify-otp', verifyLoginOTP);
@@ -21,7 +21,7 @@ router.post('/logout', logout);
 router.post('/googlelogin', googleAuthUser);
 router.post('/googleregister', googleRegisterUser);
 
-// Protected routes (any authenticated user)
+// authenticated
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
 router.put('/my/favorite', protect, addToFavorite);
@@ -29,7 +29,7 @@ router.get('/favorite', protect, getFavoriteProducts);
 router.post('/enable-2fa', protect, enable2FA);
 router.post('/disable-2fa', protect, disable2FA);
 
-// Admin-only routes (RBAC enforced)
+// admin only
 router.get('/admin/users', protect, requireRole('admin'), getAllUsers);
 router.put('/admin/makeadmin', protect, requireRole('admin'), makeAdmin);
 router.put('/admin/removeadmin', protect, requireRole('admin'), removeFromAdmin);

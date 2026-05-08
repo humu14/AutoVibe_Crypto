@@ -12,7 +12,6 @@ import * as rsaCrypto from '../crypto/rsa.js';
 import { hmac, verifyHmac } from '../crypto/hmac.js';
 import { decryptProductData, decryptProductName } from '../utils/productCrypto.js';
 
-// ==================== HELPERS ====================
 
 async function encryptOrderData(orderData) {
   const key = await getActiveKey('RSA', 'ORDER_DATA');
@@ -72,7 +71,7 @@ async function decryptOrderData(order) {
             return user;
           }
         } catch {
-          // Fall back to active key below.
+          // fallback to active key
         }
       }
 
@@ -83,7 +82,7 @@ async function decryptOrderData(order) {
           user.name = activeName;
         }
       } catch {
-        // Keep original value if decryption fails.
+        // keep original value
       }
 
       return user;
@@ -130,7 +129,6 @@ function isOrderOwnerOrAdmin(req, orderUserId) {
   return String(req.user._id) === String(orderUserId);
 }
 
-// ==================== ENDPOINTS ====================
 
 const addOrderItems = asyncHandler(async (req, res) => {
   const {
@@ -143,7 +141,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
     throw new Error('No order items');
   }
 
-  // Check stock
+  // check stock
   for (const item of orderItems) {
     const product = await Product.findById(item._id);
     if (!product) {
@@ -157,7 +155,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Update stock
+    // update stock
     for (const item of orderItems) {
       const product = await Product.findById(item._id);
       if (product) {
@@ -166,7 +164,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
       }
     }
 
-    // Encrypt shipping address
+    // encrypt shipping
     const encryptedData = await encryptOrderData({ shippingAddress });
 
     const order = new Order({
@@ -185,7 +183,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
       encryptionKeyVersion: encryptedData.encryptionKeyVersion
     });
 
-    // Compute HMAC
+    // compute hmac
     order.dataHmac = computeOrderHmac(order);
 
     const createdOrder = await order.save();
@@ -249,7 +247,7 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
     order.isPaid = true;
     order.paidAt = Date.now();
     
-    // Encrypt payment email
+    // encrypt email
     const key = await getActiveKey('RSA', 'ORDER_DATA');
     order.paymentResult = {
       id: req.body.id,
@@ -258,7 +256,7 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
       email_address: req.body.payer ? rsaCrypto.encryptString(req.body.payer.email_address, key.publicKey) : '',
     };
 
-    // Recompute HMAC
+    // recompute hmac
     order.dataHmac = computeOrderHmac(order);
     
     const updateOrder = await order.save();

@@ -17,7 +17,6 @@ import {
   invalidateCacheById
 } from '../utils/productCrypto.js';
 
-// ==================== HELPERS ====================
 
 async function encryptProductData(data) {
   const key = await getActiveKey('ECC', 'PRODUCT_DATA');
@@ -61,9 +60,8 @@ function verifyProductIntegrity(product) {
   return verifyHmac(secret, fields, product.dataHmac);
 }
 
-// ==================== ENDPOINTS ====================
 
-// GET all products (public)
+// get all products
 const getProduct = asyncHandler(async (req, res) => {
   const products = await Product.find().sort({ createdAt: -1 });
 
@@ -76,7 +74,7 @@ const getProduct = asyncHandler(async (req, res) => {
   res.status(200).json(decryptedProducts);
 });
 
-// GET a product by ID (public)
+// get product by id
 const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.productId);
 
@@ -91,13 +89,13 @@ const getProductById = asyncHandler(async (req, res) => {
   }
 });
 
-// GET unique categories (public)
+// get categories
 const getUniqueCategories = asyncHandler(async (req, res) => {
   const categories = await Product.distinct('category');
   res.status(200).json(categories);
 });
 
-// GET products by category (public)
+// get category products
 const getCategoryProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({ category: req.params.myCategory });
 
@@ -110,7 +108,7 @@ const getCategoryProducts = asyncHandler(async (req, res) => {
   res.status(200).json(decryptedProducts);
 });
 
-// POST create product (admin only)
+// create product
 const createProduct = asyncHandler(async (req, res) => {
   const {
     name, brand, description, category: initialCategory, subcategory, sku, upc,
@@ -150,7 +148,7 @@ const createProduct = asyncHandler(async (req, res) => {
   }
 });
 
-// PUT update product (admin only)
+// update product
 const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.body.productId);
 
@@ -165,27 +163,27 @@ const updateProduct = asyncHandler(async (req, res) => {
     if (req.body.description)
       product.description = isLikelyEccCiphertext(req.body.description) ? req.body.description : eccCrypto.encryptString(req.body.description, key.publicKey);
 
-    product.sku             = req.body.sku             || product.sku;
-    product.upc             = req.body.upc             || product.upc;
-    product.category        = req.body.category        ? req.body.category.toUpperCase() : product.category;
-    product.subcategory     = req.body.subcategory     || product.subcategory;
+    product.sku = req.body.sku || product.sku;
+    product.upc = req.body.upc || product.upc;
+    product.category = req.body.category ? req.body.category.toUpperCase() : product.category;
+    product.subcategory = req.body.subcategory || product.subcategory;
     product.compatibleVehicles = req.body.compatibleVehicles || product.compatibleVehicles;
-    product.fitmentNotes    = req.body.fitmentNotes    || product.fitmentNotes;
-    product.material        = req.body.material        || product.material;
-    product.color           = req.body.color           || product.color;
-    product.weightKg        = req.body.weightKg        ?? product.weightKg;
-    product.dimensionsCm    = req.body.dimensionsCm    || product.dimensionsCm;
-    product.warrantyMonths  = req.body.warrantyMonths  ?? product.warrantyMonths;
-    product.price           = req.body.price           ?? product.price;
-    product.countInStock    = req.body.countInStock    ?? product.countInStock;
-    product.image           = imageName                || product.image;
-    product.images          = req.body.images          || product.images;
-    product.tags            = req.body.tags            || product.tags;
-    product.isFeatured      = req.body.isFeatured      ?? product.isFeatured;
+    product.fitmentNotes = req.body.fitmentNotes || product.fitmentNotes;
+    product.material = req.body.material || product.material;
+    product.color = req.body.color || product.color;
+    product.weightKg = req.body.weightKg ?? product.weightKg;
+    product.dimensionsCm = req.body.dimensionsCm || product.dimensionsCm;
+    product.warrantyMonths = req.body.warrantyMonths ?? product.warrantyMonths;
+    product.price = req.body.price ?? product.price;
+    product.countInStock = req.body.countInStock ?? product.countInStock;
+    product.image = imageName || product.image;
+    product.images = req.body.images || product.images;
+    product.tags = req.body.tags || product.tags;
+    product.isFeatured = req.body.isFeatured ?? product.isFeatured;
     product.encryptionKeyVersion = key.version;
-    product.dataHmac        = computeProductHmac(product);
+    product.dataHmac = computeProductHmac(product);
 
-    // Invalidate cache before save so updatedAt change produces new cache key
+    // refresh cache key
     invalidateCacheById(product._id);
 
     const updatedProduct = await product.save();
@@ -197,7 +195,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 });
 
-// DELETE product (admin only)
+// delete product
 const deleteProduct = asyncHandler(async (req, res) => {
   const productId = req.body.productId;
   invalidateCacheById(productId);
@@ -210,16 +208,16 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 });
 
-// GET products by filter (public)
+// get filtered products
 const getProductsByFilter = asyncHandler(async (req, res) => {
   const filter = req.params.filter;
   let products;
 
-  if      (filter === 'pLow')     products = await Product.find({}).sort({ price: 1 });
-  else if (filter === 'pHigh')    products = await Product.find({}).sort({ price: -1 });
+  if (filter === 'pLow') products = await Product.find({}).sort({ price: 1 });
+  else if (filter === 'pHigh') products = await Product.find({}).sort({ price: -1 });
   else if (filter === 'ratingHigh') products = await Product.find({}).sort({ rating: -1 });
-  else if (filter === 'ratingLow')  products = await Product.find({}).sort({ rating: 1 });
-  else if (filter === 'stock')    products = await Product.find({ countInStock: { $gt: 0 } }).sort({ countInStock: -1 });
+  else if (filter === 'ratingLow') products = await Product.find({}).sort({ rating: 1 });
+  else if (filter === 'stock') products = await Product.find({ countInStock: { $gt: 0 } }).sort({ countInStock: -1 });
   else if (filter === 'featured') products = await Product.find({ isFeatured: true }).sort({ createdAt: -1 });
   else if (filter === 'alphaA' || filter === 'alphaZ') products = await Product.find({});
   else { res.status(404); throw new Error('Invalid filter'); }
@@ -234,7 +232,7 @@ const getProductsByFilter = asyncHandler(async (req, res) => {
   res.status(200).json(decryptedProducts);
 });
 
-// GET products by search (public)
+// search products
 const getProductsBySearch = asyncHandler(async (req, res) => {
   const search = req.params.search.toLowerCase();
   const allProducts = await Product.find({});

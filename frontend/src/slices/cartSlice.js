@@ -12,14 +12,14 @@ const cartSlice = createSlice({
       cartAdd: (state, action) => {
         const item = action.payload;
         
-        // Check if item has stock information
+        // check stock
         if (item.countInStock !== undefined && item.countInStock < item.qty) {
           throw new Error(`Insufficient stock for ${item.name}. Available: ${item.countInStock}, Requested: ${item.qty}`);
         }
         
         const existItem = state.cartItems.find((x) => x._id === item._id);
         if (existItem) {
-          // Check if adding this quantity would exceed stock
+          // clamp qty
           const newQty = existItem.qty + item.qty;
           if (item.countInStock !== undefined && newQty > item.countInStock) {
             throw new Error(`Cannot add ${item.qty} more. Total quantity ${newQty} would exceed available stock (${item.countInStock})`);
@@ -45,7 +45,7 @@ const cartSlice = createSlice({
         const item = state.cartItems.find((x) => x._id === itemId);
         
         if (item) {
-          // Check if new quantity exceeds stock
+          // clamp qty
           if (item.countInStock !== undefined && newQty > item.countInStock) {
             throw new Error(`Cannot set quantity to ${newQty}. Available stock: ${item.countInStock}`);
           }
@@ -55,7 +55,7 @@ const cartSlice = createSlice({
         }
       },
 
-      // Update stock for cart items in real-time
+      // sync stock
       updateCartItemStock: (state, action) => {
         const { productId, newStock } = action.payload;
         const cartItem = state.cartItems.find((x) => x._id === productId);
@@ -63,7 +63,7 @@ const cartSlice = createSlice({
         if (cartItem) {
           cartItem.countInStock = newStock;
           
-          // If current quantity exceeds new stock, adjust quantity
+          // clamp qty
           if (cartItem.qty > newStock) {
             cartItem.qty = newStock;
           }
@@ -72,7 +72,7 @@ const cartSlice = createSlice({
         }
       },
 
-      // Sync cart with current product stock
+      // sync stock
       syncCartWithStock: (state, action) => {
         const { products } = action.payload;
         

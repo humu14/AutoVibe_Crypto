@@ -1,13 +1,6 @@
-/**
- * Role-Based Access Control (RBAC) Middleware
- * Defines separate privileges for administrators and regular users
- */
+/** rbac middleware */
 
-/**
- * Middleware factory that checks if user has one of the required roles
- * @param  {...string} roles - Allowed roles (e.g., 'admin', 'user')
- * @returns {Function} Express middleware
- */
+/** role guard */
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -15,8 +8,7 @@ const requireRole = (...roles) => {
       throw new Error('Authentication required');
     }
 
-    // Prefer legacy isAdmin flag so admin access keeps working for older users
-    // whose role field may still be "user".
+    // keep legacy admin flag
     const userRole = req.user.isAdmin ? 'admin' : (req.user.role || 'user');
 
     if (!roles.includes(userRole)) {
@@ -28,14 +20,10 @@ const requireRole = (...roles) => {
   };
 };
 
-/**
- * Admin-only middleware (shorthand)
- */
+/** admin only */
 const adminOnly = requireRole('admin');
 
-/**
- * Authenticated user middleware (any role)
- */
+/** authenticated */
 const authenticated = requireRole('admin', 'user');
 
 export { requireRole, adminOnly, authenticated };

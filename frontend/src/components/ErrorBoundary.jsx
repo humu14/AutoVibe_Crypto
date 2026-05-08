@@ -12,7 +12,7 @@ class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
-      // You can customize the error message and UI here
+      // customize ui
       return (
         <div>
           <h1>Oops! Something went wrong.</h1>

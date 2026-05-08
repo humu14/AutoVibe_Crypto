@@ -14,8 +14,7 @@ const MyFilterOrderScreen = () => {
   const { userId: userId } = useParams();
   const { data: orders, refetch, isLoading, error } = useGetMyFilterOrdersQuery({ userId: userId, filter: fil });
 
-  // Ensure we have a valid filter value for the dropdown
-  // If no filter is specified, default to 'default' (all orders)
+  // validate filter
   const currentFilter = fil || 'default';
 
   useEffect(() => {
@@ -27,10 +26,10 @@ const MyFilterOrderScreen = () => {
     const selectedFilter = event.target.value;
     
     if (selectedFilter === 'default') {
-      // Navigate to main orders page (no filter)
+      // go to all orders
       navigate(`/myorder/${userId}`);
     } else {
-      // Navigate to filtered orders page
+      // go to filtered orders
       navigate(`/myorder/${userId}/filter/${selectedFilter}`);
     }
   };

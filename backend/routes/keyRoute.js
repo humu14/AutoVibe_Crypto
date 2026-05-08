@@ -5,7 +5,7 @@ import { listKeys, keyStatus, rotateKeyEndpoint, revokeKeyEndpoint } from '../co
 
 const router = express.Router();
 
-// All key management routes require admin role
+// admin only
 router.get('/', protect, requireRole('admin'), listKeys);
 router.get('/status', protect, requireRole('admin'), keyStatus);
 router.post('/rotate/:keyId', protect, requireRole('admin'), rotateKeyEndpoint);

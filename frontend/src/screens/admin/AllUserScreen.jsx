@@ -403,7 +403,7 @@ const AllUserScreen = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Remove User Confirmation Modal */}
+      {/* remove modal */}
       <Modal 
         show={showRemoveModal} 
         onHide={handleCloseRemoveModal} 

@@ -30,9 +30,9 @@ const otpSchema = mongoose.Schema({
   timestamps: true
 });
 
-// Auto-expire OTPs using MongoDB TTL index
+// ttl expiry
 otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-// Quick lookups by user
+// user lookup
 otpSchema.index({ userId: 1 });
 
 const OTP = mongoose.model("OTP", otpSchema);

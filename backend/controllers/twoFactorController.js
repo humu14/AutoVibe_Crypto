@@ -1,7 +1,4 @@
-/**
- * Two-Factor Authentication Controller
- * Handles OTP generation, verification, and 2FA management
- */
+/** two-factor controller */
 
 import asyncHandler from 'express-async-handler';
 import OTP from '../models/otpModel.js';
@@ -9,10 +6,7 @@ import { sha256 } from '../crypto/sha256.js';
 
 const includeOtpForDev = process.env.NODE_ENV !== 'production';
 
-/**
- * Generate a 6-digit OTP code
- * @returns {string} 6-digit code
- */
+/** generate otp code */
 function generateOTPCode() {
   const seed = `${Date.now()}|${Math.random()}|${process.pid}|${Math.random()}`;
   const digest = sha256(seed);
@@ -20,21 +14,17 @@ function generateOTPCode() {
   return String((numeric % 900000) + 100000);
 }
 
-/**
- * Create and store an OTP for a user
- * @param {string} userId - MongoDB user ID
- * @returns {Object} { code, expiresAt }
- */
+/** create otp */
 async function createOTP(userId) {
-  // Invalidate any existing OTPs for this user
+  // clear old otps
   await OTP.updateMany(
     { userId, verified: false },
-    { verified: true } // Mark old ones as used
+    { verified: true } // mark old ones used
   );
 
   const code = generateOTPCode();
-  const codeHash = sha256(code); // Store hash, not plaintext
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+  const codeHash = sha256(code); // store hash
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5m
 
   await OTP.create({
     userId,
@@ -48,12 +38,7 @@ async function createOTP(userId) {
   return { code, expiresAt };
 }
 
-/**
- * Verify an OTP code
- * @param {string} userId - MongoDB user ID
- * @param {string} code - The OTP code to verify
- * @returns {boolean} True if valid
- */
+/** verify otp code */
 async function verifyOTPCode(userId, code) {
   const otp = await OTP.findOne({
     userId,
@@ -65,17 +50,17 @@ async function verifyOTPCode(userId, code) {
     return { valid: false, error: 'No valid OTP found. Please request a new one.' };
   }
 
-  // Check attempt limit
+  // check attempt limit
   if (otp.attempts >= otp.maxAttempts) {
-    otp.verified = true; // Invalidate
+    otp.verified = true; // invalidate
     await otp.save();
     return { valid: false, error: 'Too many attempts. Please request a new OTP.' };
   }
 
-  // Increment attempts
+  // increment attempts
   otp.attempts += 1;
 
-  // Verify code hash
+  // verify hash
   const codeHash = sha256(code);
   if (codeHash !== otp.codeHash) {
     await otp.save();
@@ -85,16 +70,14 @@ async function verifyOTPCode(userId, code) {
     };
   }
 
-  // Mark as verified
+  // mark verified
   otp.verified = true;
   await otp.save();
 
   return { valid: true };
 }
 
-/**
- * API: Verify OTP (called during 2-step login)
- */
+/** verify otp api */
 const verifyOTP = asyncHandler(async (req, res) => {
   const { userId, otpCode } = req.body;
 
@@ -113,9 +96,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
   res.status(200).json({ verified: true, message: 'OTP verified successfully' });
 });
 
-/**
- * API: Resend OTP
- */
+/** resend otp api */
 const resendOTP = asyncHandler(async (req, res) => {
   const { userId } = req.body;
 

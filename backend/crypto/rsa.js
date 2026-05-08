@@ -73,14 +73,13 @@ function randomBigInt(bits) {
     hex += byte.toString(16).padStart(2, '0');
   }
   let result = BigInt('0x' + hex);
-  // Ensure the top bit is set (so we get exactly the right bit length)
+  // set top bit
   result = result | (1n << BigInt(bits - 1));
-  // Ensure it's odd (for prime candidate)
+  // make odd
   result = result | 1n;
   return result;
 }
 
-// ==================== PRIMALITY TESTING ====================
 
 /**
  * Miller-Rabin primality test
@@ -93,7 +92,7 @@ function millerRabin(n, rounds = 20) {
   if (n === 2n || n === 3n) return true;
   if (n % 2n === 0n) return false;
 
-  // Write n-1 as 2^r * d where d is odd
+  // factor n-1
   let r = 0n;
   let d = n - 1n;
   while (d % 2n === 0n) {
@@ -101,9 +100,9 @@ function millerRabin(n, rounds = 20) {
     d = d / 2n;
   }
 
-  // Witness loop
+  // witness loop
   for (let i = 0; i < rounds; i++) {
-    // Random base a in [2, n-2]
+    // random base
     const range = n - 4n;
     let a = 2n;
     if (range > 0n) {
@@ -151,7 +150,6 @@ function generatePrime(bits) {
   return candidate;
 }
 
-// ==================== RSA KEY GENERATION ====================
 
 /**
  * Generate RSA key pair
@@ -161,29 +159,29 @@ function generatePrime(bits) {
 function generateKeyPair(bitLength = 1024) {
   const halfBits = Math.floor(bitLength / 2);
 
-  // Generate two distinct large primes
+  // generate primes
   const p = generatePrime(halfBits);
   let q;
   do {
     q = generatePrime(halfBits);
   } while (q === p);
 
-  // Compute modulus
+  // modulus
   const n = p * q;
 
-  // Euler's totient
+  // totient
   const phi = (p - 1n) * (q - 1n);
 
-  // Public exponent (commonly 65537)
+  // public exponent
   const e = 65537n;
 
-  // Verify gcd(e, phi) = 1
+  // check coprime
   if (gcd(e, phi) !== 1n) {
-    // Extremely unlikely with e=65537, but retry if it happens
+    // retry if needed
     return generateKeyPair(bitLength);
   }
 
-  // Private exponent
+  // private exponent
   const d = modInverse(e, phi);
 
   return {
@@ -200,7 +198,6 @@ function generateKeyPair(bitLength = 1024) {
   };
 }
 
-// ==================== ENCRYPTION / DECRYPTION ====================
 
 /**
  * Encrypt a BigInt message with RSA public key
@@ -234,7 +231,6 @@ function decrypt(ciphertextHex, privateKey) {
   return modPow(ciphertext, d, n);
 }
 
-// ==================== STRING ENCRYPTION ====================
 
 /**
  * Convert a string to a BigInt
@@ -257,7 +253,7 @@ function stringToBigInt(str) {
 function bigIntToString(bigint) {
   if (bigint === 0n) return '';
   let hex = bigint.toString(16);
-  // Pad to even length
+  // pad hex
   if (hex.length % 4 !== 0) {
     hex = hex.padStart(Math.ceil(hex.length / 4) * 4, '0');
   }
@@ -279,8 +275,8 @@ function bigIntToString(bigint) {
 function getMaxChunkSize(publicKey) {
   const n = BigInt('0x' + publicKey.n);
   const nBits = n.toString(2).length;
-  // Each character takes 4 hex digits = 16 bits
-  // Leave some room for safety (use 80% of key size)
+  // 4 hex digits per char
+  // keep some headroom
   return Math.floor((nBits * 0.8) / 16);
 }
 
@@ -326,13 +322,13 @@ function decryptString(ciphertext, privateKey) {
 
     return plaintext;
   } catch (e) {
-    // If it's not valid JSON, it might be unencrypted legacy data
-    // console.error('RSA decryption failed:', e.message);
+    // legacy/plaintext
+    // rsa decrypt failed
     return ciphertext;
   }
 }
 
-// Sign/verify functions that take sha256 as parameter to avoid circular imports
+// sign/verify helpers
 /**
  * Sign data with RSA private key (synchronous version)
  * @param {string} data - Data to sign

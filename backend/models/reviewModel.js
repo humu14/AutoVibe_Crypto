@@ -5,7 +5,7 @@ const reviewSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
-    // Encrypted with ECC
+    // ecc ciphertext
     comment: {
         type: String,
         required: true,
@@ -20,12 +20,12 @@ const reviewSchema = mongoose.Schema({
         required: true,
         ref:'Product'
     },
-    // Data integrity - HMAC of review fields
+    // hmac
     dataHmac: {
         type: String,
         default: ''
     },
-    // Tracks which ECC key version encrypted this record
+    // key version
     encryptionKeyVersion: {
         type: Number,
         default: 1

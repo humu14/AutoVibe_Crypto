@@ -66,7 +66,7 @@ const NotFoundScreen = () => {
           </div>
         </div>
 
-        {/* Decorative Elements */}
+        {/* decor */}
         <div className="absolute top-10 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-30 animate-pulse"></div>
         <div className="absolute bottom-10 right-10 w-16 h-16 bg-purple-200 rounded-full opacity-30 animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-5 w-12 h-12 bg-pink-200 rounded-full opacity-30 animate-pulse delay-500"></div>

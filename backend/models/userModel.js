@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const userSchema = mongoose.Schema({
-    // Encrypted fields (RSA encrypted - stored as ciphertext)
+    // rsa ciphertext
     name: {
         type: String,
         required: true
@@ -10,29 +10,29 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    // Deterministic hash of email for lookups (SHA-256)
+    // email hash
     emailHash: {
         type: String,
         required: true,
         unique: true
     },
-    // Phone number (RSA encrypted)
+    // rsa ciphertext
     phone: {
         type: String,
         default: ''
     },
-    // Password (custom SHA-256 hash with salt: $iterations$salt$hash)
+    // password hash
     password: {
         type: String,
         required: true
     },
-    // Role-based access control
+    // role
     role: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
     },
-    // Legacy field - kept for backward compatibility
+    // legacy field
     isAdmin: {
         type: Boolean,
         required: true,
@@ -59,17 +59,17 @@ const userSchema = mongoose.Schema({
         expires: { type: Date },
         discount: { type: Number, default: 0 }
     },
-    // Two-factor authentication
+    // 2fa
     twoFactorEnabled: {
         type: Boolean,
-        default: true  // Enabled by default per requirement
+        default: true  // enabled by default
     },
-    // Data integrity - HMAC of sensitive fields
+    // hmac
     dataHmac: {
         type: String,
         default: ''
     },
-    // Tracks which key version encrypted this record
+    // key version
     encryptionKeyVersion: {
         type: Number,
         default: 1
@@ -78,8 +78,8 @@ const userSchema = mongoose.Schema({
     timestamps: true
 });
 
-// NOTE: bcrypt pre-save hook removed — password hashing is handled in the controller
-// using our custom passwordHash module
+// bcrypt hook removed
+// password hash is in controller
 
 const User = mongoose.model("User", userSchema);
 

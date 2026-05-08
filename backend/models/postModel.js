@@ -7,12 +7,12 @@ const postSchema = mongoose.Schema(
       required: true,
       ref: 'User'
     },
-    // Encrypted with ECC
+    // ecc ciphertext
     title: {
       type: String,
       required: true
     },
-    // Encrypted with ECC
+    // ecc ciphertext
     content: {
       type: String,
       required: true

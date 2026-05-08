@@ -66,11 +66,11 @@ const AdminAddProductScreen = () => {
 
     // const fileToString = (file) => {
     // console.log(file);
-    // const { name, lastModified, lastModifiedDate, size, type, webkitRelativePath} = file;
+    // file meta
     // const fileObject = {
     //     name,
     //     lastModified,
-    //     lastModifiedDate: lastModifiedDate.toString(),
+    // file date
     //     size,
     //     type,
     //     webkitRelativePath,
@@ -90,7 +90,7 @@ const AdminAddProductScreen = () => {
             formData.append('sku', sku);
             formData.append('upc', upc);
             if (compatibleVehicles) {
-                // split by comma into array server can parse as repeated fields
+                // split csv
                 compatibleVehicles.split(',').map(v => formData.append('compatibleVehicles', v.trim()));
             }
             formData.append('material', material);
@@ -124,8 +124,6 @@ const AdminAddProductScreen = () => {
     return (
         <>
             <AdminPanelScreen />
-            {/* <Grid container spacing={6}> */}
-            {/* <Grid item xs={12} md={12}> */}
             <Formcontainer>
                 <h1>Add Product</h1>
                 <Form onSubmit={submitHandler}>

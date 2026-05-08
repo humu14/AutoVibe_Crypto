@@ -32,14 +32,14 @@ export default function SearchBar() {
                         placeholder="Search"
                         aria-label="Search"
                         aria-describedby="button-addon2"
-                        style={{ maxWidth: "100%" }} // Ensure the input doesn't exceed the parent width
+                        style={{ maxWidth: "100%" }} // fit width
                     />
 
                     <button
                         type="submit"
                         className="input-group-text flex items-center whitespace-nowrap rounded px-3 py-1.5 text-center text-base font-normal text-neutral-700 dark:text-neutral-200"
                         id="button-addon2"
-                        style={{ maxWidth: "100%", marginLeft: "5px" }} // Ensure the button doesn't exceed the parent width
+                        style={{ maxWidth: "100%", marginLeft: "5px" }} // fit width
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"

@@ -19,7 +19,7 @@ const storage = multer.diskStorage(
 )
 const upload = multer({storage: storage});
 
-// Public routes
+// public
 router.get('/category', getUniqueCategories);
 router.get('/:productId', getProductById);
 router.get('/', getProduct);
@@ -27,7 +27,7 @@ router.get('/category/:myCategory', getCategoryProducts);
 router.get('/filter/:filter', getProductsByFilter);
 router.get('/search/:search', getProductsBySearch);
 
-// Admin-only routes (RBAC enforced)
+// admin only
 router.put('/', upload.single('image'), protect, requireRole('admin'), updateProduct);
 router.post('/', upload.single('image'), protect, requireRole('admin'), createProduct);
 router.delete('/', protect, requireRole('admin'), deleteProduct);

@@ -68,7 +68,7 @@ const ProfileScreen = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    {/* Profile Image Section */}
+                    {/* image section */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
                             <div className="mb-6">
@@ -98,7 +98,7 @@ const ProfileScreen = () => {
                         </div>
                     </div>
 
-                    {/* Profile Form Section */}
+                    {/* form section */}
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">

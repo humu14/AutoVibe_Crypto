@@ -8,7 +8,7 @@ import Key from '../models/keyModel.js';
 import * as rsa from './rsa.js';
 import * as ecc from './ecc.js';
 
-// In-memory cache for active keys (avoid DB queries on every request)
+// key cache
 let keyCache = {};
 let keyEncryptionPair = null;
 let warnedUnprotectedPrivateKeyStorage = false;
@@ -119,19 +119,14 @@ async function createActiveKey(config, version = 1) {
   });
 }
 
-/**
- * Generate a unique key ID
- */
+/** key id */
 function generateKeyId(algorithm, purpose) {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 8);
   return `${algorithm}-${purpose}-${timestamp}-${random}`.toLowerCase();
 }
 
-/**
- * Initialize encryption keys on server startup
- * Generates RSA and ECC key pairs if none exist
- */
+/** init keys */
 async function initializeKeys() {
   console.log('🔐 Initializing Key Management System...');
 
@@ -183,14 +178,12 @@ async function initializeKeys() {
     }
   }
 
-  // Refresh cache
+  // refresh cache
   await refreshKeyCache();
   console.log('🔐 Key Management System initialized.');
 }
 
-/**
- * Refresh the in-memory key cache
- */
+/** refresh cache */
 async function refreshKeyCache() {
   const activeKeys = await Key.find({ status: 'ACTIVE' });
   keyCache = {};
@@ -212,27 +205,22 @@ async function refreshKeyCache() {
   }
 }
 
-/**
- * Get the active key for a given algorithm and purpose
- * @param {string} algorithm - 'RSA' or 'ECC'
- * @param {string} purpose - 'USER_DATA', 'PRODUCT_DATA', etc.
- * @returns {Object} Key data {keyId, publicKey, privateKey, version}
- */
+/** get active key */
 async function getActiveKey(algorithm, purpose) {
   const cacheKey = `${algorithm}:${purpose}`;
 
-  // Try cache first
+  // cache first
   if (keyCache[cacheKey]) {
     return keyCache[cacheKey];
   }
 
-  // Fall back to DB
+  // db fallback
   const key = await Key.findOne({ algorithm, purpose, status: 'ACTIVE' });
   if (!key) {
     throw new Error(`No active ${algorithm} key found for ${purpose}`);
   }
 
-  // Update cache
+  // update cache
   keyCache[cacheKey] = {
     keyId: key.keyId,
     algorithm: key.algorithm,
@@ -245,12 +233,7 @@ async function getActiveKey(algorithm, purpose) {
   return keyCache[cacheKey];
 }
 
-/**
- * Get a specific key by version (for decrypting old data)
- * @param {string} algorithm
- * @param {string} purpose
- * @param {number} version
- */
+/** get key by version */
 async function getKeyByVersion(algorithm, purpose, version) {
   const key = await Key.findOne({ algorithm, purpose, version });
   if (!key) {
@@ -264,17 +247,13 @@ async function getKeyByVersion(algorithm, purpose, version) {
   };
 }
 
-/**
- * Rotate a key — generate new key pair, mark old as ROTATED
- * @param {string} keyId - The key to rotate
- * @returns {Object} New key data
- */
+/** rotate key */
 async function rotateKey(keyId) {
   const oldKey = await Key.findOne({ keyId });
   if (!oldKey) throw new Error('Key not found');
   if (oldKey.status !== 'ACTIVE') throw new Error('Can only rotate active keys');
 
-  // Generate new key pair
+  // new key pair
   let newKeyPair;
   if (oldKey.algorithm === 'RSA') {
     newKeyPair = rsa.generateKeyPair(1024);
@@ -282,12 +261,12 @@ async function rotateKey(keyId) {
     newKeyPair = ecc.generateKeyPair();
   }
 
-  // Mark old key as rotated
+  // mark rotated
   oldKey.status = 'ROTATED';
   oldKey.rotatedAt = new Date();
   await oldKey.save();
 
-  // Create new key
+  // create key
   const newKey = await Key.create({
     keyId: generateKeyId(oldKey.algorithm, oldKey.purpose),
     algorithm: oldKey.algorithm,
@@ -302,7 +281,7 @@ async function rotateKey(keyId) {
     expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
   });
 
-  // Refresh cache
+  // refresh cache
   await refreshKeyCache();
 
   console.log(`🔑 Key rotated: ${oldKey.keyId} → ${newKey.keyId}`);
@@ -315,10 +294,7 @@ async function rotateKey(keyId) {
   };
 }
 
-/**
- * Revoke a key
- * @param {string} keyId
- */
+/** revoke key */
 async function revokeKey(keyId) {
   const key = await Key.findOne({ keyId });
   if (!key) throw new Error('Key not found');
@@ -328,7 +304,7 @@ async function revokeKey(keyId) {
   key.status = 'REVOKED';
   await key.save();
 
-  // If we just revoked the currently active key, generate a replacement to prevent system crash
+  // replace active key
   if (wasActive) {
     let newKeyPair;
     if (key.algorithm === 'RSA') {
@@ -353,16 +329,14 @@ async function revokeKey(keyId) {
     console.log(`🔑 Automatically generated replacement key for ${key.purpose}`);
   }
 
-  // Refresh cache
+  // refresh cache
   await refreshKeyCache();
 
   console.log(`🔑 Key revoked: ${keyId}`);
   return { keyId, status: 'REVOKED' };
 }
 
-/**
- * Get all keys (admin view)
- */
+/** get all keys */
 async function getAllKeys() {
   const keys = await Key.find({}).sort({ createdAt: -1 });
   return keys.map(k => ({
@@ -374,14 +348,12 @@ async function getAllKeys() {
     createdAt: k.createdAt,
     rotatedAt: k.rotatedAt,
     expiresAt: k.expiresAt,
-    // Never expose private keys
+    // never expose private keys
     publicKeyPreview: JSON.stringify(k.publicKey).substring(0, 50) + '...'
   }));
 }
 
-/**
- * Get key status summary
- */
+/** key status */
 async function getKeyStatus() {
   const keys = await Key.find({});
   const active = keys.filter(k => k.status === 'ACTIVE').length;
@@ -396,7 +368,7 @@ async function getKeyStatus() {
   return { total: keys.length, active, rotated, revoked, expiringSoon };
 }
 
-// HMAC secret key (derived from environment or hardcoded for lab)
+// hmac secret
 function getHmacSecret() {
   return process.env.HMAC_SECRET || 'autovibe-hmac-secret-key-cse447-2024';
 }

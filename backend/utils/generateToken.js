@@ -1,7 +1,5 @@
 /**
- * Custom Token Generation — RSA-Signed Session Tokens
- * Replaces jsonwebtoken with custom implementation
- * Creates RSA-signed tokens and manages sessions
+ * custom token generation
  */
 
 import Session from '../models/sessionModel.js';
@@ -9,9 +7,7 @@ import { sha256 } from '../crypto/sha256.js';
 import { getActiveKey } from '../crypto/keyManager.js';
 import * as rsa from '../crypto/rsa.js';
 
-/**
- * Encode string to base64url
- */
+/** encode string to base64url */
 function base64urlEncode(str) {
   return Buffer.from(str, 'utf-8')
     .toString('base64')
@@ -20,30 +16,22 @@ function base64urlEncode(str) {
     .replace(/=+$/, '');
 }
 
-/**
- * Compute session fingerprint from request
- */
+/** compute session fingerprint */
 function computeFingerprint(req) {
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
   const userAgent = req.headers['user-agent'] || 'unknown';
   return sha256(ip + '|' + userAgent);
 }
 
-/**
- * Generate a custom RSA-signed token and create a session
- * @param {Object} res - Express response object
- * @param {string} userId - User's MongoDB ID
- * @param {string} role - User's role ('admin' or 'user')
- * @param {Object} req - Express request object (for fingerprint)
- */
+/** create a signed token and session */
 const generateToken = async (res, userId, role, req) => {
   try {
-    // Get the signing key
+    // get signing key
     const signingKey = await getActiveKey('RSA', 'SESSION_SIGNING');
 
-    // Create session record
+    // create session
     const fingerprint = computeFingerprint(req);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     const session = new Session({
       userId,
@@ -54,7 +42,7 @@ const generateToken = async (res, userId, role, req) => {
       expiresAt
     });
 
-    // Build token: header.payload.signature
+    // build token
     const header = {
       alg: 'RSA',
       typ: 'TOKEN'
@@ -72,20 +60,20 @@ const generateToken = async (res, userId, role, req) => {
     const payloadB64 = base64urlEncode(JSON.stringify(payload));
     const dataToSign = `${headerB64}.${payloadB64}`;
 
-    // Sign with RSA private key
+    // sign token
     const signature = rsa.sign(dataToSign, signingKey.privateKey, sha256);
     const token = `${dataToSign}.${signature}`;
 
-    // Update session with token
-    session.token = sha256(token); // Store hash of token, not token itself
+    // store token hash
+    session.token = sha256(token); // hash only
     await session.save();
 
-    // Set cookie
+    // set cookie
     res.cookie('jwt', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24h
     });
 
     return token;
@@ -95,10 +83,7 @@ const generateToken = async (res, userId, role, req) => {
   }
 };
 
-/**
- * Invalidate all sessions for a user (for logout)
- * @param {string} userId
- */
+/** invalidate user sessions */
 const invalidateUserSessions = async (userId) => {
   await Session.updateMany(
     { userId, isValid: true },
@@ -106,9 +91,7 @@ const invalidateUserSessions = async (userId) => {
   );
 };
 
-/**
- * Clean up expired sessions
- */
+/** clean expired sessions */
 const cleanupExpiredSessions = async () => {
   const result = await Session.deleteMany({
     $or: [

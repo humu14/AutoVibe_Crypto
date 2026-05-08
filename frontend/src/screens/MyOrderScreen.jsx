@@ -13,7 +13,7 @@ const MyOrderScreen = () => {
   const { userInfo } = useSelector(state => state.auth);
   const userId = userInfo?._id;
   
-  // Guard clause - if userId is not available, show loading or redirect
+  // guard clause
   if (!userId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
@@ -63,7 +63,7 @@ const MyOrderScreen = () => {
     try {
       const res = await cancelOrder({ orderId: orderId }).unwrap();
       toast.success('Order Cancelled Successfully!');
-      refetch(); // This will refresh the orders and show updated status
+      refetch(); // refresh orders
     } catch (err) {
       console.error('Cancel order error:', err);
       toast.error(err?.data?.message || err?.error || 'Failed to cancel order. Please try again.');

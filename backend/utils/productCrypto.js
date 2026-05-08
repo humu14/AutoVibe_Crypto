@@ -1,7 +1,7 @@
 import { getActiveKey, getKeyByVersion } from '../crypto/keyManager.js';
 import * as eccCrypto from '../crypto/ecc.js';
 
-// Shared cache: Map<`${_id}_${updatedAt}`, decryptedObject>
+// cache map
 const decryptCache = new Map();
 
 export function isLikelyEccCiphertext(value) {
@@ -64,10 +64,7 @@ export async function decryptProductData(product) {
   }
 }
 
-/**
- * Decrypt only the name field of a raw product (or populated sub-doc).
- * Faster when only name is needed (avoids decrypting description).
- */
+/** decrypt only product name */
 export async function decryptProductName(product) {
   if (!product) return product;
   const name = product.name;

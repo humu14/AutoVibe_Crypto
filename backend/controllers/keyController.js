@@ -1,30 +1,21 @@
-/**
- * Key Management Controller
- * Admin-only endpoints for encryption key lifecycle management
- */
+/** key management controller */
 
 import asyncHandler from 'express-async-handler';
 import { getAllKeys, getKeyStatus, rotateKey, revokeKey } from '../crypto/keyManager.js';
 
-/**
- * GET /api/keys — List all encryption keys
- */
+/** list keys */
 const listKeys = asyncHandler(async (req, res) => {
   const keys = await getAllKeys();
   res.status(200).json(keys);
 });
 
-/**
- * GET /api/keys/status — Key health dashboard
- */
+/** key status */
 const keyStatus = asyncHandler(async (req, res) => {
   const status = await getKeyStatus();
   res.status(200).json(status);
 });
 
-/**
- * POST /api/keys/rotate/:keyId — Rotate an encryption key
- */
+/** rotate key */
 const rotateKeyEndpoint = asyncHandler(async (req, res) => {
   const { keyId } = req.params;
 
@@ -40,9 +31,7 @@ const rotateKeyEndpoint = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * POST /api/keys/revoke/:keyId — Revoke an encryption key
- */
+/** revoke key */
 const revokeKeyEndpoint = asyncHandler(async (req, res) => {
   const { keyId } = req.params;
 

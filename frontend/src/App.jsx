@@ -10,7 +10,7 @@ function App() {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
   
-  // Initialize stock synchronization for non-admin pages
+  // init stock sync
   const stockSync = useStockSync();
 
   return (
@@ -29,7 +29,7 @@ function App() {
       
       {!isAdminPage && <Footer />}
       
-      {/* Modern Sonner Toast Container */}
+      {/* toast container */}
       <Toaster
         position="top-right"
         richColors

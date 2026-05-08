@@ -12,7 +12,6 @@ import * as rsaCrypto from '../crypto/rsa.js';
 import { hmac, verifyHmac } from '../crypto/hmac.js';
 import { decryptProductName } from '../utils/productCrypto.js';
 
-// ==================== HELPERS ====================
 
 async function encryptReviewData(data) {
   const key = await getActiveKey('ECC', 'REVIEW_DATA');
@@ -50,7 +49,7 @@ async function decryptReviewUserName(reviewObj) {
 
   const encryptedName = reviewObj.user.name;
 
-  // Detect RSA chunked ciphertext format: ["HEX..."]
+  // detect rsa ciphertext
   const looksEncrypted = (value) => {
     if (typeof value !== 'string') return false;
     return /^\s*\[\s*"[0-9A-Fa-f]+"(?:\s*,\s*"[0-9A-Fa-f]+")*\s*\]\s*$/.test(value);
@@ -65,7 +64,7 @@ async function decryptReviewUserName(reviewObj) {
   };
 
   try {
-    // Prefer the key version used by this user record.
+    // prefer stored key
     if (reviewObj.user.encryptionKeyVersion) {
       const versionedKey = await getKeyByVersion('RSA', 'USER_DATA', reviewObj.user.encryptionKeyVersion);
       const name = tryDecrypt(versionedKey.privateKey);
@@ -75,7 +74,7 @@ async function decryptReviewUserName(reviewObj) {
       }
     }
 
-    // Fallback to active key.
+    // fallback to active key
     const activeKey = await getActiveKey('RSA', 'USER_DATA');
     const activeName = tryDecrypt(activeKey.privateKey);
     if (activeName && !looksEncrypted(activeName)) {
@@ -83,12 +82,12 @@ async function decryptReviewUserName(reviewObj) {
       return reviewObj;
     }
 
-    // Last fallback: keep plaintext/legacy value, but do not overwrite with encrypted payload.
+    // keep legacy value
     if (!looksEncrypted(encryptedName)) {
       reviewObj.user.name = encryptedName;
     }
   } catch (e) {
-    // Keep original value if decryption fails (legacy/plaintext records).
+    // keep original value
   }
 
   return reviewObj;
@@ -105,20 +104,19 @@ function computeReviewHmac(review) {
   return hmac(secret, fields);
 }
 
-// ==================== ENDPOINTS ====================
 
-// POST create review (private)
+// create review
 const createReview = asyncHandler(async (req, res) => {
   const { rating, comment, productId } = req.body;
 
-  // Check if already reviewed
+  // check duplicate review
   const existingReview = await Review.findOne({ user: req.user._id, product: productId });
   if (existingReview) {
     res.status(400).json({ message: 'Product already reviewed', flag: true });
     return;
   }
 
-  // Encrypt comment with ECC
+  // encrypt comment
   const encrypted = await encryptReviewData({ comment });
 
   const reviewData = {
@@ -129,7 +127,7 @@ const createReview = asyncHandler(async (req, res) => {
     encryptionKeyVersion: encrypted.encryptionKeyVersion
   };
 
-  // Compute HMAC
+  // compute hmac
   reviewData.dataHmac = computeReviewHmac(reviewData);
 
   const newReview = await Review.create(reviewData);
@@ -156,7 +154,7 @@ const createReview = asyncHandler(async (req, res) => {
   }
 });
 
-// GET reviews for a product (public)
+// get product reviews
 const getReview = asyncHandler(async (req, res) => {
   const productId = req.params.id;
   const reviews = await Review.find({ product: productId }).populate('user', 'name encryptionKeyVersion');
@@ -175,7 +173,7 @@ const getReview = asyncHandler(async (req, res) => {
   }
 });
 
-// DELETE review (admin)
+// delete review
 const deleteReview = asyncHandler(async (req, res) => {
   const reviewId = req.body.id;
   const review = await Review.findById(reviewId);
@@ -199,7 +197,7 @@ const deleteReview = asyncHandler(async (req, res) => {
   }
 });
 
-// GET all reviews (admin)
+// get all reviews
 const getAllReviews = asyncHandler(async (req, res) => {
   const reviews = await Review.find({}).populate('user', 'name encryptionKeyVersion').populate('product', 'name rating encryptionKeyVersion updatedAt');
 
@@ -208,7 +206,7 @@ const getAllReviews = asyncHandler(async (req, res) => {
     for (const review of reviews) {
       const decrypted = await decryptReviewData(review);
       const reviewWithUser = await decryptReviewUserName(decrypted);
-      // Decrypt populated product name
+      // decrypt product name
       if (reviewWithUser.product && reviewWithUser.product.name) {
         reviewWithUser.product = await decryptProductName(reviewWithUser.product);
       }

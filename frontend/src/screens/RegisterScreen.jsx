@@ -65,7 +65,7 @@ const RegisterScreen = () => {
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    {/* Left Side - Image */}
+                    {/* left side */}
                     <div className="hidden lg:block">
                         <div className="text-center">
                             <div className="relative">
@@ -87,7 +87,7 @@ const RegisterScreen = () => {
                         </div>
                     </div>
 
-                    {/* Right Side - Registration Form */}
+                    {/* right side */}
                     <div className="bg-white rounded-3xl shadow-xl p-8 lg:p-12">
                         <div className="text-center mb-8">
                             <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">

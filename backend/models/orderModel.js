@@ -15,7 +15,7 @@ const orderSchema = mongoose.Schema({
             product: {type: mongoose.Schema.Types.ObjectId, required: true, ref: "Product"},
         }
     ],
-    // Shipping address fields encrypted with RSA
+    // rsa ciphertext
     shippingAddress: {
         address: {type: String, required: true},
         city: {type: String, required: true},
@@ -30,7 +30,7 @@ const orderSchema = mongoose.Schema({
         id: {type: String},
         status: {type: String},
         update_time: {type: String},
-        email_address: {type: String}, // Encrypted with RSA
+        email_address: {type: String}, // rsa ciphertext
     },
     taxPrice: {
         type: Number,
@@ -67,7 +67,7 @@ const orderSchema = mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    // Data integrity - HMAC
+    // hmac
     dataHmac: {
         type: String,
         default: ''

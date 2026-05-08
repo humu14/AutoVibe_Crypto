@@ -47,7 +47,7 @@ const keySchema = mongoose.Schema({
   timestamps: true
 });
 
-// Index for quick lookups
+// lookup index
 keySchema.index({ algorithm: 1, purpose: 1, status: 1 });
 
 const Key = mongoose.model("Key", keySchema);

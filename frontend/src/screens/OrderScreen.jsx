@@ -102,9 +102,9 @@ const OrderScreen = () => {
         totalPrice: order.totalPrice,
       }).unwrap();
       toast.success('Reorder Successful!');
-      // Navigate to the new order - this will trigger a new API call for the new order
+      // navigate to new order
       navigate(`/order/${res._id}`);
-      // Don't call refetch here as we're navigating to a new page
+      // skip refetch
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
@@ -130,7 +130,7 @@ const OrderScreen = () => {
 
   const orderStatus = getOrderStatus(order);
 
-  // Safety check - if order is not available, show not found
+  // safety check
   if (!order) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
@@ -171,7 +171,7 @@ const OrderScreen = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Order Status Card */}
+            {/* status card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-6">
                 <div>
@@ -274,7 +274,7 @@ const OrderScreen = () => {
 
               {/* Order Summary */}
               <div className="space-y-6">
-                {/* Shipping Address */}
+                {/* shipping address */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <FaMapMarkerAlt className="w-5 h-5 text-blue-600" />

@@ -46,7 +46,7 @@ const FavoritesScreen = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
+        {/* page header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-4">
             <FaHeart className="text-red-500" />
@@ -58,7 +58,7 @@ const FavoritesScreen = () => {
           <div className="w-24 h-1 bg-red-500 mx-auto mt-6 rounded-full"></div>
         </div>
 
-        {/* Favorites Content */}
+        {/* favorites content */}
         {favIsLoading || productsLoading ? (
           <div className="flex justify-center items-center py-20">
             <Loader />
@@ -91,7 +91,7 @@ const FavoritesScreen = () => {
           </div>
         ) : (
           <>
-            {/* Favorites Count */}
+            {/* favorites count */}
             <div className="mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                 <div className="flex items-center justify-between">
@@ -106,7 +106,7 @@ const FavoritesScreen = () => {
               </div>
             </div>
 
-            {/* Favorites Grid */}
+            {/* favorites grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {favoriteProducts &&
                 favoriteProducts.map((product) => (
@@ -116,7 +116,7 @@ const FavoritesScreen = () => {
                 ))}
             </div>
 
-            {/* Action Buttons */}
+            {/* action buttons */}
             <div className="text-center mt-12">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <LinkContainer to="/allProducts">

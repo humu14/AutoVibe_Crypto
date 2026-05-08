@@ -197,5 +197,5 @@ export const dismissAll = () => toast.dismiss();
 // Dismiss specific toast
 export const dismiss = (toastId) => toast.dismiss(toastId);
 
-// Export the base toast function for backward compatibility
+// export toast
 export { toast };

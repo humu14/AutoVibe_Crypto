@@ -21,7 +21,7 @@ export const useStockSync = () => {
     }
   }, [products, dispatch]);
 
-  // Monitor stock changes and update cart in real-time
+  // watch stock
   useEffect(() => {
     if (!products || cartItems.length === 0) return;
 
@@ -30,14 +30,14 @@ export const useStockSync = () => {
       if (product) {
         const lastStock = lastStockUpdate.current[cartItem._id];
         
-        // If stock has changed, update cart
+        // update cart
         if (lastStock !== undefined && lastStock !== product.countInStock) {
           dispatch(updateCartItemStock({ 
             productId: cartItem._id, 
             newStock: product.countInStock 
           }));
 
-          // Show warning if stock decreased significantly
+          // warn on drop
           if (lastStock > product.countInStock) {
             const decrease = lastStock - product.countInStock;
             if (decrease > 0) {
@@ -45,19 +45,19 @@ export const useStockSync = () => {
             }
           }
 
-          // Show error if item is now out of stock
+          // warn out of stock
           if (product.countInStock === 0 && lastStock > 0) {
             showError(`${product.name} is now out of stock and has been removed from your cart`);
           }
         }
 
-        // Update last known stock
+        // remember stock
         lastStockUpdate.current[cartItem._id] = product.countInStock;
       }
     });
   }, [products, cartItems, dispatch]);
 
-  // Remove out-of-stock items automatically
+  // remove out-of-stock items
   useEffect(() => {
     if (products && cartItems.length > 0) {
       const outOfStockItems = cartItems.filter(item => 
@@ -73,20 +73,20 @@ export const useStockSync = () => {
     }
   }, [products, cartItems, dispatch]);
 
-  // Get real-time stock for a specific product
+  // get stock
   const getCurrentStock = (productId) => {
     if (!products) return null;
     const product = products.find(p => p._id === productId);
     return product ? product.countInStock : null;
   };
 
-  // Check if product is in stock
+  // check stock
   const isInStock = (productId, quantity = 1) => {
     const stock = getCurrentStock(productId);
     return stock !== null && stock >= quantity;
   };
 
-  // Get stock status for display
+  // stock status
   const getStockStatus = (productId) => {
     const stock = getCurrentStock(productId);
     if (stock === null) return { status: 'loading', text: 'Checking stock...', color: 'text-gray-500' };

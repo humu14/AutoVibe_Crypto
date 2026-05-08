@@ -45,7 +45,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             </div>
           </Transition.Child>
           <div className="flex-shrink-0 w-14">
-            {/* Force sidebar to shrink to fit close icon */}
+            {/* shrink to fit */}
           </div>
         </div>
       </div>

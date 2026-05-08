@@ -153,10 +153,10 @@ const ProductScreen = () => {
     }
   }
 
-  // if(reviewData && reviewData.length > 0){
+  // review data
   //   setInterval(() => {
-  //   const createdAt = reviewData.createdAt;
-  //   const timeAgo = calculateTimeAgo(createdAt);
+  // review timestamp
+  // review age
   // }, 10000);
   // }
 
@@ -230,7 +230,7 @@ const ProductScreen = () => {
                         border: '1px solid #ccc',
                         borderRadius: '8px',
                         padding: '10px',
-                        backgroundColor: '#c0c0c0', // Replace with your desired background color
+                        backgroundColor: '#c0c0c0', // bg color
                       }}
                     >
                       <Grid item container>
@@ -336,7 +336,7 @@ const ProductScreen = () => {
       {/* Reviews Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Customer Reviews */}
+          {/* reviews */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Customer Reviews</h3>
             

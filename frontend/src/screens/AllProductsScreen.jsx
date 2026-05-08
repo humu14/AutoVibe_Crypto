@@ -149,7 +149,7 @@ const AllProductsScreen = () => {
                 ))}
             </div>
 
-            {/* No Products Message */}
+            {/* no products */}
             {Array.isArray(data) && data.length === 0 && (
               <div className="text-center py-20">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">

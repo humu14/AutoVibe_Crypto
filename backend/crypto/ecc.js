@@ -7,27 +7,25 @@
  * Used by Bitcoin — well-documented parameters
  */
 
-// ==================== CURVE PARAMETERS (secp256k1) ====================
 
 const CURVE = {
-  // Prime field
+  // field prime
   p: BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F'),
-  // Curve coefficients: y² = x³ + ax + b
+  // curve coeffs
   a: 0n,
   b: 7n,
-  // Generator point G
+  // generator
   Gx: BigInt('0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798'),
   Gy: BigInt('0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8'),
-  // Order of the generator point
+  // group order
   n: BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141'),
-  // Cofactor
+  // cofactor
   h: 1n
 };
 
-// Point at infinity (identity element)
+// point at infinity
 const POINT_INFINITY = { x: null, y: null };
 
-// ==================== MODULAR ARITHMETIC ====================
 
 /**
  * Modular addition
@@ -77,7 +75,6 @@ function modInverse(a, p) {
   return modPow(a, p - 2n, p);
 }
 
-// ==================== POINT OPERATIONS ====================
 
 /**
  * Check if a point is the point at infinity
@@ -109,21 +106,21 @@ function pointAdd(P, Q) {
 
   const { p } = CURVE;
 
-  // If P = -Q, return infinity
+  // opposite points
   if (P.x === Q.x && modAdd(P.y, Q.y, p) === 0n) {
     return POINT_INFINITY;
   }
 
   let lambda;
   if (P.x === Q.x && P.y === Q.y) {
-    // Point doubling
+    // doubling
     lambda = modMul(
       modAdd(modMul(3n, modMul(P.x, P.x, p), p), CURVE.a, p),
       modInverse(modMul(2n, P.y, p), p),
       p
     );
   } else {
-    // Point addition
+    // addition
     lambda = modMul(
       modSub(Q.y, P.y, p),
       modInverse(modSub(Q.x, P.x, p), p),
@@ -179,7 +176,6 @@ function pointNegate(P) {
   return { x: P.x, y: modSub(0n, P.y, CURVE.p) };
 }
 
-// ==================== KEY GENERATION ====================
 
 /**
  * Generate random BigInt in range [1, max-1]
@@ -205,10 +201,10 @@ function randomScalar(max) {
 function generateKeyPair() {
   const G = { x: CURVE.Gx, y: CURVE.Gy };
   
-  // Private key: random scalar in [1, n-1]
+  // private key
   const privateKey = randomScalar(CURVE.n);
   
-  // Public key: privateKey * G
+  // public key
   const publicKey = scalarMultiply(privateKey, G);
 
   return {
@@ -220,7 +216,6 @@ function generateKeyPair() {
   };
 }
 
-// ==================== EC-ELGAMAL ENCRYPTION ====================
 
 /**
  * Encode a message (bytes) to a curve point using Koblitz method
@@ -230,19 +225,18 @@ function generateKeyPair() {
  */
 function encodeToPoint(m) {
   const { p, a, b } = CURVE;
-  const k = 100n; // Koblitz parameter — try k candidates
+  const k = 100n; // koblitz window
   
   for (let j = 0n; j < k; j++) {
     const x = modAdd(modMul(m, k, p), j, p);
-    // y² = x³ + ax + b
+    // curve equation
     const rhs = modAdd(modAdd(modPow(x, 3n, p), modMul(a, x, p), p), b, p);
-    // Check if rhs is a quadratic residue using Euler's criterion
+    // check residue
     const euler = modPow(rhs, (p - 1n) / 2n, p);
     if (euler === 1n) {
-      // Compute sqrt using Tonelli-Shanks (simplified for p ≡ 3 mod 4)
-      // For secp256k1, p ≡ 3 mod 4, so sqrt(a) = a^((p+1)/4) mod p
+      // sqrt for p % 4 == 3
       const y = modPow(rhs, (p + 1n) / 4n, p);
-      return { x, y, j }; // j is needed for decoding
+      return { x, y, j }; // decode offset
     }
   }
   throw new Error('Failed to encode message to curve point');
@@ -271,19 +265,19 @@ function encryptValue(message, recipientPubKey) {
     y: BigInt('0x' + recipientPubKey.y)
   };
 
-  // Encode message to curve point
+  // encode message
   const M = encodeToPoint(message);
 
-  // Generate ephemeral key
+  // ephemeral key
   const r = randomScalar(CURVE.n);
 
-  // C1 = r * G
+  // c1 = r * g
   const C1 = scalarMultiply(r, G);
 
-  // Shared secret S = r * PublicKey
+  // shared secret
   const S = scalarMultiply(r, pubKey);
 
-  // C2 = M + S
+  // c2 = m + s
   const C2 = pointAdd({ x: M.x, y: M.y }, S);
 
   return {
@@ -310,17 +304,16 @@ function decryptValue(ciphertext, privateKeyHex) {
     y: BigInt('0x' + ciphertext.C2.y)
   };
 
-  // S = privateKey * C1
+  // s = priv * c1
   const S = scalarMultiply(privKey, C1);
 
-  // M = C2 - S = C2 + (-S)
+  // subtract shared secret
   const M = pointAdd(C2, pointNegate(S));
 
-  // Decode point back to message
+  // decode message
   return decodeFromPoint(M);
 }
 
-// ==================== STRING ENCRYPTION ====================
 
 /**
  * Convert a short string to BigInt (max ~30 chars for secp256k1 with Koblitz k=100)
@@ -398,8 +391,8 @@ function decryptString(ciphertext, privateKey) {
 
     return plaintext;
   } catch (e) {
-    // If not valid JSON, might be unencrypted legacy data
-    // console.error('ECC decryption failed:', e.message);
+    // legacy/plaintext
+    // ecc decrypt failed
     return ciphertext;
   }
 }

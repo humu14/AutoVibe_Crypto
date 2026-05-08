@@ -22,11 +22,11 @@ const Footer = () => {
 
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative">
-      {/* Background Pattern */}
+      {/* background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 to-purple-900/10"></div>
       
       <div className="relative z-10">
-        {/* Main Footer Content */}
+        {/* footer content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {/* Company Info */}

@@ -78,7 +78,7 @@ const PlaceOrderScreen = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Order Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Shipping Information */}
+            {/* shipping info */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <FaMapMarkerAlt className="w-6 h-6 text-blue-600" />

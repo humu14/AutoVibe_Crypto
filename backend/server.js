@@ -24,7 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// API Routes
+// api routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoute);
 app.use('/api/orders', orderRoute);
@@ -49,7 +49,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(notFound);
 app.use(errorHandler);
 
-// Connect DB and init keys before accepting requests
+// start after db and keys
 async function startServer() {
   await connectDB();
   await initializeKeys();

@@ -6,7 +6,7 @@ import { NavLink } from 'react-router-dom';
 const Hero = () => {
   return (
     <div className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-16 overflow-hidden">
-      {/* Background Decorative Elements */}
+      {/* background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
@@ -77,7 +77,7 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Featured Products Carousel */}
+        {/* featured carousel */}
         <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
           {/* <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Products</h2>

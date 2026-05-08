@@ -154,7 +154,7 @@ const CartScreen = () => {
                           </div>
                         </div>
                         
-                        {/* Quantity Controls */}
+                        {/* qty controls */}
                         <div className="flex items-center gap-3">
                           <Form.Control
                             as="select"

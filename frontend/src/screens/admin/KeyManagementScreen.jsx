@@ -273,7 +273,7 @@ const KeyManagementScreen = () => {
         </div>
       </div>
 
-      {/* Rotate Key Confirmation Modal */}
+      {/* rotate modal */}
       <Modal 
         show={showRotateModal} 
         onHide={handleCloseRotateModal} 
@@ -317,7 +317,7 @@ const KeyManagementScreen = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Revoke Key Confirmation Modal */}
+      {/* revoke modal */}
       <Modal 
         show={showRevokeModal} 
         onHide={handleCloseRevokeModal} 

@@ -23,7 +23,7 @@ const SalesScreen = () => {
             <div className="w-24 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
           </div>
 
-          {/* Quick Stats Overview */}
+          {/* quick stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center gap-4">
@@ -80,7 +80,7 @@ const SalesScreen = () => {
 
           {/* Charts Section */}
           <div className="space-y-8">
-            {/* Monthly Sales Chart */}
+            {/* monthly chart */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -102,9 +102,9 @@ const SalesScreen = () => {
               </div>
             </div>
 
-            {/* Top Products and Categories Row */}
+            {/* top row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Top Products by Sales */}
+              {/* top products */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
@@ -120,7 +120,7 @@ const SalesScreen = () => {
                 </div>
               </div>
 
-              {/* Top Categories by Sales */}
+              {/* top categories */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -137,7 +137,7 @@ const SalesScreen = () => {
               </div>
             </div>
 
-            {/* Additional Insights */}
+            {/* insights */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">

@@ -38,11 +38,11 @@ const sessionSchema = mongoose.Schema({
   timestamps: true
 });
 
-// Auto-expire sessions using MongoDB TTL index
+// ttl expiry
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-// Quick lookups by token
+// token lookup
 sessionSchema.index({ token: 1 });
-// Quick lookups by user
+// user lookup
 sessionSchema.index({ userId: 1 });
 
 const Session = mongoose.model("Session", sessionSchema);

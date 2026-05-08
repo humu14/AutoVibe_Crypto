@@ -14,7 +14,7 @@ export default function AgeVerificationModal({ isOpen, onClose, onConfirm }) {
 
     useEffect(() => {
         if (userInfo) {
-            setIsOver18(true); // Assuming the user is verified if authenticated
+            setIsOver18(true); // assume verified
         }
     }, [userInfo]);
 

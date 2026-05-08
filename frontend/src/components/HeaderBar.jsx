@@ -106,7 +106,7 @@ const HeaderBar = () => {
         };
     }, []);
 
-    // Close sidebar when clicking outside on mobile
+    // close sidebar
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (isSidebarOpen && !event.target.closest('#sidebar') && !event.target.closest('#sidebar-toggle')) {
@@ -122,11 +122,11 @@ const HeaderBar = () => {
 
     return (
         <div className="relative">
-            {/* Top Navigation Bar */}
+            {/* top nav */}
             <nav className="fixed top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
                 <div className="px-4 py-3 lg:px-6">
                     <div className="flex items-center justify-between">
-                        {/* Left Section - Logo and Menu Button */}
+                        {/* left section */}
                         <div className="flex items-center space-x-4">
                             <button
                                 id="sidebar-toggle"
@@ -144,12 +144,12 @@ const HeaderBar = () => {
                             </LinkContainer>
                         </div>
 
-                        {/* Center Section - Search Bar (hidden on mobile) */}
+                        {/* center section */}
                         <div className="hidden lg:block flex-1 max-w-xl mx-8">
                             <SearchBar />
                         </div>
 
-                        {/* Right Section - User Menu and Cart */}
+                        {/* right section */}
                         <div className="flex items-center space-x-3">
                             {/* Cart Icon */}
                             <Link to="/cart" className="relative p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200">
@@ -243,7 +243,7 @@ const HeaderBar = () => {
                 </div>
             </nav>
 
-            {/* Mobile Search Bar */}
+            {/* mobile search */}
             <div className="lg:hidden fixed top-16 z-40 w-full bg-white border-b border-gray-200 px-4 py-3">
                 <SearchBar />
             </div>

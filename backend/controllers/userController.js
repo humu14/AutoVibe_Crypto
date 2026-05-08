@@ -23,7 +23,6 @@ import { createOTP, verifyOTPCode } from './twoFactorController.js';
 
 const includeOtpForDev = process.env.NODE_ENV !== 'production';
 
-// ==================== HELPER FUNCTIONS ====================
 
 /**
  * Encrypt user sensitive fields with RSA
@@ -74,7 +73,7 @@ async function decryptUserData(user) {
     return decrypted;
   } catch (e) {
     console.error('Decryption error:', e.message);
-    // Return safe legacy fallback if decryption fails.
+    // legacy fallback
     return {
       _id: user._id,
       name: user.name || '',
@@ -111,7 +110,7 @@ function computeUserHmac(userData) {
  * Verify user data integrity
  */
 function verifyUserIntegrity(user) {
-  if (!user.dataHmac) return true; // Legacy data without HMAC
+  if (!user.dataHmac) return true; // legacy data
   const secret = getHmacSecret();
   const fields = [
     user.name || '',
@@ -123,7 +122,6 @@ function verifyUserIntegrity(user) {
   return verifyHmac(secret, fields, user.dataHmac);
 }
 
-// ==================== AUTH ENDPOINTS ====================
 
 /**
  * POST /api/users/auth — Step 1 of login
@@ -132,7 +130,7 @@ function verifyUserIntegrity(user) {
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Hash email for lookup
+  // hash email
   const emailHash = sha256(email.toLowerCase().trim());
   const user = await User.findOne({ emailHash });
 
@@ -141,18 +139,18 @@ const authUser = asyncHandler(async (req, res) => {
     throw new Error('Invalid email or password');
   }
 
-  // Verify data integrity
+  // verify integrity
   if (!verifyUserIntegrity(user)) {
     console.error(`⚠️ Data integrity violation detected for user ${user._id}`);
   }
 
-  // Verify password with custom hash
+  // verify password
   if (!verifyPassword(password, user.password)) {
     res.status(401);
     throw new Error('Invalid email or password');
   }
 
-  // Step 2: Generate OTP for two-factor auth
+  // generate otp
   if (user.twoFactorEnabled) {
     const { code, expiresAt } = await createOTP(user._id);
 
@@ -169,7 +167,7 @@ const authUser = asyncHandler(async (req, res) => {
 
     res.status(200).json(response);
   } else {
-    // 2FA not enabled — create session directly
+    // 2fa off, create session
     const userRole = user.role || (user.isAdmin ? 'admin' : 'user');
     await generateToken(res, user._id, userRole, req);
     
@@ -204,7 +202,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new Error(result.error);
   }
 
-  // OTP verified — create session
+  // otp verified, create session
   const user = await User.findById(userId);
   if (!user) {
     res.status(404);
@@ -233,7 +231,7 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, phone } = req.body;
 
-  // Check if user already exists using email hash
+  // check existing user
   const emailHash = sha256(email.toLowerCase().trim());
   const userExists = await User.findOne({ emailHash });
 
@@ -242,13 +240,13 @@ const register = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  // Hash password with custom implementation
+  // hash password
   const hashedPassword = hashPassword(password);
 
-  // Encrypt sensitive fields with RSA
+  // encrypt fields
   const encrypted = await encryptUserData({ name, email, phone: phone || '' });
 
-  // Compute HMAC for data integrity
+  // compute hmac
   const userData = {
     name: encrypted.name,
     email: encrypted.email,
@@ -258,7 +256,7 @@ const register = asyncHandler(async (req, res) => {
   };
   const dataHmac = computeUserHmac(userData);
 
-  // Create user
+  // create user
   const user = await User.create({
     name: encrypted.name,
     email: encrypted.email,
@@ -273,12 +271,12 @@ const register = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    // Generate OTP for initial 2FA setup
+    // generate otp
     const { code, expiresAt } = await createOTP(user._id);
 
     const response = {
       _id: user._id,
-      name: name, // Return plaintext for UI
+      name: name, // ui plaintext
       email: email,
       admin: false,
       role: 'user',
@@ -304,7 +302,7 @@ const register = asyncHandler(async (req, res) => {
  * POST /api/users/logout — Logout and invalidate session
  */
 const logout = asyncHandler(async (req, res) => {
-  // Invalidate all sessions for this user
+  // invalidate sessions
   if (req.user) {
     await invalidateUserSessions(req.user._id);
   }
@@ -316,7 +314,6 @@ const logout = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
-// ==================== PROFILE ENDPOINTS ====================
 
 /**
  * GET /api/users/profile — Get user profile (decrypted)
@@ -329,7 +326,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 
-  // Verify integrity
+  // verify integrity
   if (!verifyUserIntegrity(user)) {
     console.warn(`⚠️ HMAC integrity check failed for user ${user._id}`);
   }
@@ -349,7 +346,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 
-  // Re-encrypt updated fields
+  // re-encrypt fields
   if (req.body.name || req.body.email || req.body.phone) {
     const key = await getActiveKey('RSA', 'USER_DATA');
     
@@ -370,7 +367,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.password = hashPassword(req.body.password);
   }
 
-  // Recompute HMAC
+  // recompute hmac
   user.dataHmac = computeUserHmac({
     name: user.name,
     email: user.email,
@@ -390,7 +387,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// ==================== FAVORITES ====================
 
 const addToFavorite = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -434,7 +430,6 @@ const getFavoriteProducts = asyncHandler(async (req, res) => {
   res.status(200).json(decrypted);
 });
 
-// ==================== ADMIN ENDPOINTS ====================
 
 /**
  * GET /api/users/admin/users — Get all users (decrypted)
@@ -442,7 +437,7 @@ const getFavoriteProducts = asyncHandler(async (req, res) => {
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find({});
   
-  // Decrypt all user data and verify integrity
+  // decrypt users
   const decryptedUsers = [];
   for (const user of users) {
     const integrity = verifyUserIntegrity(user);
@@ -466,7 +461,7 @@ const makeAdmin = asyncHandler(async (req, res) => {
   user.isAdmin = true;
   user.role = 'admin';
   
-  // Recompute HMAC with new role
+  // recompute hmac
   user.dataHmac = computeUserHmac({
     name: user.name,
     email: user.email,
@@ -497,7 +492,7 @@ const removeFromAdmin = asyncHandler(async (req, res) => {
   user.isAdmin = false;
   user.role = 'user';
   
-  // Recompute HMAC
+  // recompute hmac
   user.dataHmac = computeUserHmac({
     name: user.name,
     email: user.email,
@@ -520,7 +515,7 @@ const removeFromAdmin = asyncHandler(async (req, res) => {
 
 const removeUser = asyncHandler(async (req, res) => {
   const userId = req.body.userId;
-  // Invalidate all sessions for user before deletion
+  // invalidate sessions
   await invalidateUserSessions(userId);
   const user = await User.deleteOne({ _id: userId });
   if (user.deletedCount === 0) {
@@ -530,7 +525,6 @@ const removeUser = asyncHandler(async (req, res) => {
   res.json({ message: 'User removed' });
 });
 
-// ==================== GOOGLE AUTH (simplified) ====================
 
 const googleAuthUser = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -538,7 +532,7 @@ const googleAuthUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ emailHash });
   
   if (user) {
-    // Generate OTP for 2FA
+    // generate otp
     if (user.twoFactorEnabled) {
       const { code, expiresAt } = await createOTP(user._id);
 
@@ -631,7 +625,6 @@ const googleRegisterUser = asyncHandler(async (req, res) => {
   }
 });
 
-// ==================== 2FA MANAGEMENT ====================
 
 const enable2FA = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);

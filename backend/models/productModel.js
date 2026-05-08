@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const productSchema = mongoose.Schema({
-    // Encrypted with ECC (stored as ciphertext)
+    // ecc ciphertext
     name: {
         type: String,
         required: true
@@ -17,7 +17,7 @@ const productSchema = mongoose.Schema({
         type: String,
         sparse: true
     },
-    // Encrypted with ECC
+    // ecc ciphertext
     description: {
         type: String,
     },
@@ -83,12 +83,12 @@ const productSchema = mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    // Data integrity - HMAC of product fields
+    // hmac
     dataHmac: {
         type: String,
         default: ''
     },
-    // Tracks which ECC key version encrypted this record
+    // key version
     encryptionKeyVersion: {
         type: Number,
         default: 1

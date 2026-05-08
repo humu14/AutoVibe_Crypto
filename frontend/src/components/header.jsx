@@ -78,12 +78,12 @@ const Header = () => {
 
   const appBarStyle = {
     background: 'black',
-    height: theme.spacing(8), // Adjust height using theme spacing for consistency
+    height: theme.spacing(8), // theme spacing
     width: '100%',
     [theme.breakpoints.down('sm')]: { // Adjust style for small devices
       height: theme.spacing(7),
     },
-    [theme.breakpoints.up('md')]: { // Adjust style for medium and larger devices
+    [theme.breakpoints.up('md')]: { // md+
       height: theme.spacing(8),
     }
   };
@@ -160,7 +160,7 @@ const Header = () => {
   const mobileStyle = {
     ...desktopStyle,
     fontSize: 'medium', // larger font size for mobile
-    padding: '5px 15px', // increased padding for a larger touch target
+    padding: '5px 15px', // larger touch target
     width: 'auto', // adjust width based on content
     marginRight: '10px', // adjust margin for smaller screens
   };
@@ -317,7 +317,6 @@ const Header = () => {
             {userInfo && (userInfo.admin || userInfo.role === 'admin') && (
               <LinkContainer to="/admin/userslist" style={window.innerWidth < 768 ? mobileStyle : desktopStyle}>
                 <button className="bg-blue-500 hover:bg-blue-400 text-white font-bold border-b-4 border-blue-700 hover:border-blue-500 rounded">
-                  {/* <AdminPanelSettingsIcon />  */}
                   <small>Admin Panel</small>
                 </button>
               </LinkContainer>
