@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useGetFilterOrdersQuery, useMarkAsDeliveredMutation } from '../../slices/ordersApiSlice.js';
+import { useGetFilterOrdersQuery, useMarkAsDeliveredMutation, usePayOrderMutation } from '../../slices/ordersApiSlice.js';
 import Loader from '../../components/Loader.jsx';
 import Message from '../../components/Message.jsx';
 import { LinkContainer } from 'react-router-bootstrap';
@@ -18,6 +18,7 @@ const FilterOrderScreen = () => {
   }, [fil]);
 
   const [deliverOrder, { isLoading: loadingDeliver }] = useMarkAsDeliveredMutation();
+  const [payOrder, { isLoading: loadingPaymentStatus }] = usePayOrderMutation();
 
   const deliverHandler = async (orderId) => {
     try {
@@ -26,6 +27,16 @@ const FilterOrderScreen = () => {
       toast.success('Order marked as delivered successfully');
     } catch (error) {
       toast.error('Failed to mark order as delivered');
+    }
+  };
+
+  const paymentStatusHandler = async (order) => {
+    try {
+      await payOrder({ orderId: order._id, details: { isPaid: !order.isPaid, manual: true } }).unwrap();
+      refetch();
+      toast.success(`Order marked as ${order.isPaid ? 'unpaid' : 'paid'}`);
+    } catch (error) {
+      toast.error('Failed to update order payment status');
     }
   };
 
@@ -293,6 +304,17 @@ const FilterOrderScreen = () => {
                                 View
                               </Button>
                             </LinkContainer>
+
+                            <Button
+                              variant={order.isPaid ? 'outline-danger' : 'outline-success'}
+                              size="sm"
+                              onClick={() => paymentStatusHandler(order)}
+                              disabled={loadingPaymentStatus || order.isCancelled}
+                              className="inline-flex items-center gap-2"
+                            >
+                              {order.isCancelled ? <FaTimes className="w-3 h-3" /> : order.isPaid ? <FaTimes className="w-3 h-3" /> : <FaCheckCircle className="w-3 h-3" />}
+                              {order.isCancelled ? 'Cancelled' : order.isPaid ? 'Mark Unpaid' : 'Mark Paid'}
+                            </Button>
                             
                             {!order.isDelivered && (
                               <Button

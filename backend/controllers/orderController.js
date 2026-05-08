@@ -244,17 +244,40 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
       throw new Error('Not authorized to update this order');
     }
 
-    order.isPaid = true;
-    order.paidAt = Date.now();
-    
-    // encrypt email
-    const key = await getActiveKey('RSA', 'ORDER_DATA');
-    order.paymentResult = {
-      id: req.body.id,
-      status: req.body.status,
-      update_time: req.body.update_time,
-      email_address: req.body.payer ? rsaCrypto.encryptString(req.body.payer.email_address, key.publicKey) : '',
-    };
+    if (order.isCancelled) {
+      res.status(400);
+      throw new Error('Cancelled orders cannot be marked as paid');
+    }
+
+    const hasManualStatus = typeof req.body.isPaid === 'boolean';
+    const nextIsPaid = hasManualStatus ? req.body.isPaid : true;
+
+    if (order.isPaid === nextIsPaid) {
+      const currentOrder = await Order.findById(req.params.orderId);
+      return res.json(currentOrder);
+    }
+
+    order.isPaid = nextIsPaid;
+    order.paidAt = nextIsPaid ? Date.now() : undefined;
+
+    if (nextIsPaid) {
+      const key = await getActiveKey('RSA', 'ORDER_DATA');
+      order.paymentResult = req.body.payer
+        ? {
+            id: req.body.id,
+            status: req.body.status,
+            update_time: req.body.update_time,
+            email_address: rsaCrypto.encryptString(req.body.payer.email_address, key.publicKey),
+          }
+        : {
+            id: req.body.id || `manual-${order._id}`,
+            status: req.body.status || 'MANUAL_PAID',
+            update_time: req.body.update_time || new Date().toISOString(),
+            email_address: req.body.email_address || '',
+          };
+    } else {
+      order.paymentResult = {};
+    }
 
     // recompute hmac
     order.dataHmac = computeOrderHmac(order);
@@ -264,7 +287,9 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
     const pointsAchieved = order.totalPrice / 100;
     const pointUser = await User.findById(order.user);
     if (pointUser) {
-      pointUser.points += pointsAchieved;
+      pointUser.points = nextIsPaid
+        ? pointUser.points + pointsAchieved
+        : Math.max(0, pointUser.points - pointsAchieved);
       await pointUser.save();
     }
 
@@ -273,6 +298,53 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Order not found');
   }
+});
+
+const updateOrderPaymentStatus = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.orderId);
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+
+  if (order.isCancelled) {
+    res.status(400);
+    throw new Error('Cancelled orders cannot be marked as paid');
+  }
+
+  const { isPaid } = req.body;
+  const nextIsPaid = typeof isPaid === 'boolean' ? isPaid : !order.isPaid;
+
+  if (order.isPaid === nextIsPaid) {
+    const currentOrder = await Order.findById(req.params.orderId);
+    return res.json(currentOrder);
+  }
+
+  order.isPaid = nextIsPaid;
+  order.paidAt = nextIsPaid ? Date.now() : undefined;
+  order.paymentResult = nextIsPaid
+    ? {
+        id: req.body.id || `manual-${order._id}`,
+        status: req.body.status || 'MANUAL_PAID',
+        update_time: req.body.update_time || new Date().toISOString(),
+        email_address: req.body.email_address || '',
+      }
+    : {};
+
+  order.dataHmac = computeOrderHmac(order);
+
+  const updatedOrder = await order.save();
+
+  const pointsAchieved = order.totalPrice / 100;
+  const pointUser = await User.findById(order.user);
+  if (pointUser) {
+    pointUser.points = nextIsPaid
+      ? pointUser.points + pointsAchieved
+      : Math.max(0, pointUser.points - pointsAchieved);
+    await pointUser.save();
+  }
+
+  res.json(updatedOrder);
 });
 
 const checkStockAvailability = asyncHandler(async (req, res) => {
@@ -498,6 +570,7 @@ const getProductCategoriesSortedByOrders = asyncHandler(async (req, res) => {
 
 export {
   addOrderItems, getOrderById, updateOrderToPaid, updateOrderToDelivered,
+  updateOrderPaymentStatus,
   getAllOrders, myOrders, updateOrderToCancel, filterOrder, myFilterOrders,
   getSales, getTopProducts, getProductCategoriesSortedByOrders,
   checkStockAvailability, checkCartStockAvailability

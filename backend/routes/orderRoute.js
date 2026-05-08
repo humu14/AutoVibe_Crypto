@@ -1,5 +1,6 @@
 import express from 'express';
 import {addOrderItems, getOrderById, updateOrderToPaid, updateOrderToDelivered, 
+    updateOrderPaymentStatus,
     getAllOrders, myOrders, updateOrderToCancel,filterOrder,
     myFilterOrders, getSales, getTopProducts, getProductCategoriesSortedByOrders,
     checkStockAvailability, checkCartStockAvailability} from '../controllers/orderController.js';
@@ -12,6 +13,7 @@ router.post('/', protect, addOrderItems);
 router.post('/check-stock', checkStockAvailability);
 router.post('/check-cart-stock', checkCartStockAvailability);
 router.get('/admin', protect, requireRole('admin'), getAllOrders);
+router.put('/admin/:orderId/payment-status', protect, requireRole('admin'), updateOrderPaymentStatus);
 router.get('/:orderId', protect, getOrderById);
 router.put('/:orderId/pay', protect, updateOrderToPaid);
 router.put('/:orderId/deliver', protect, requireRole('admin'), updateOrderToDelivered);

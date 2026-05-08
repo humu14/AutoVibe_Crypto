@@ -33,6 +33,14 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
             }),
         }),
 
+        updateOrderPaymentStatus: builder.mutation({
+            query: ({ orderId, isPaid }) => ({
+                url: `${ORDER_URL}/admin/${orderId}/payment-status`,
+                method: 'PUT',
+                body: { isPaid },
+            }),
+        }),
+
         markAsDelivered : builder.mutation({
             query: ({ orderId }) => ({
                 url: `${ORDER_URL}/${orderId}/deliver`,
@@ -96,6 +104,7 @@ export const { useCreateOrderMutation,
     useGetOrderByIdQuery, 
     useGetPaypalClientIdQuery,
     usePayOrderMutation, 
+    useUpdateOrderPaymentStatusMutation,
     useMarkAsDeliveredMutation, 
     useGetAllOrdersQuery,
     useGetMyOrdersQuery,

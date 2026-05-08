@@ -5,7 +5,7 @@ import Loader from '../../components/Loader.jsx';
 import Message from '../../components/Message.jsx';
 import { LinkContainer } from 'react-router-bootstrap';
 import { Button } from 'react-bootstrap';
-import { useMarkAsDeliveredMutation } from '../../slices/ordersApiSlice.js';
+import { useMarkAsDeliveredMutation, usePayOrderMutation } from '../../slices/ordersApiSlice.js';
 import AdminPanelScreen from './AdminPanelScreen.jsx';
 import Grid from '@mui/material/Grid';
 import InputLabel from '@mui/material/InputLabel';
@@ -14,6 +14,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import { Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { FaBox, FaFilter, FaEye, FaTruck, FaCheckCircle, FaTimesCircle, FaClock, FaUser, FaDollarSign, FaCalendar, FaTimes } from 'react-icons/fa';
 
 const AllOrderScreen = () => {
@@ -24,10 +25,21 @@ const AllOrderScreen = () => {
   }, [refetch]);
 
   const [deliverOrder, { isLoading: loadingDeliver }] = useMarkAsDeliveredMutation();
+  const [payOrder, { isLoading: loadingPaymentStatus }] = usePayOrderMutation();
 
   const deliverHandler = async (orderId) => {
     await deliverOrder({ orderId });
     refetch();
+  };
+
+  const paymentStatusHandler = async (order) => {
+    try {
+      await payOrder({ orderId: order._id, details: { isPaid: !order.isPaid, manual: true } }).unwrap();
+      refetch();
+      toast.success(`Order marked as ${order.isPaid ? 'unpaid' : 'paid'}`);
+    } catch (error) {
+      toast.error('Failed to update order payment status');
+    }
   };
 
   const navigate = useNavigate();
@@ -280,6 +292,21 @@ const AllOrderScreen = () => {
                                 View
                               </button>
                             </LinkContainer>
+
+                            <button
+                              onClick={() => paymentStatusHandler(order)}
+                              disabled={loadingPaymentStatus || order.isCancelled}
+                              className={`inline-flex items-center gap-2 px-3 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 ${
+                                order.isCancelled
+                                  ? 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed'
+                                  : order.isPaid
+                                  ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500'
+                                  : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
+                              }`}
+                            >
+                              {order.isCancelled ? <FaTimesCircle className="w-4 h-4" /> : order.isPaid ? <FaTimesCircle className="w-4 h-4" /> : <FaCheckCircle className="w-4 h-4" />}
+                              {order.isCancelled ? 'Cancelled' : order.isPaid ? 'Mark Unpaid' : 'Mark Paid'}
+                            </button>
                             
                             {!order.isDelivered && order.isPaid && (
                               <button
