@@ -41,7 +41,7 @@ const LoginScreen = () => {
   }, []);
 
   const navigateToPort3001 = () => {
-    window.location.href = 'https://thlab.techavens.com/';
+    window.location.href = 'http://localhost:3000/';
   };
 
   const submitHandler = async (e) => {
@@ -52,20 +52,20 @@ const LoginScreen = () => {
     }
     try {
       const res = await login({ email, password }).unwrap();
-      
+
       // Check if 2FA is required
       if (res.pending2FA) {
         // Navigate to 2FA screen with user data
-        navigate('/verify-2fa', { 
-          state: { 
-            userId: res.userId, 
+        navigate('/verify-2fa', {
+          state: {
+            userId: res.userId,
             otpCode: res.otp,
-            expiresAt: res.expiresAt 
-          } 
+            expiresAt: res.expiresAt
+          }
         });
         return;
       }
-      
+
       dispatch(setCredentials({ ...res }));
       navigate(location.state?.from || '/');
     } catch (err) {
@@ -115,10 +115,10 @@ const LoginScreen = () => {
                   <FaEnvelope className="w-4 h-4 text-blue-500" />
                   Email Address
                 </Form.Label>
-                <Form.Control 
-                  type='email' 
-                  placeholder='Enter your email address' 
-                  value={email} 
+                <Form.Control
+                  type='email'
+                  placeholder='Enter your email address'
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="border-gray-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 h-12 text-base"
                   required
@@ -131,10 +131,10 @@ const LoginScreen = () => {
                   Password
                 </Form.Label>
                 <div className="relative">
-                  <Form.Control 
-                    type={showPassword ? 'text' : 'password'} 
-                    placeholder='Enter your password' 
-                    value={password} 
+                  <Form.Control
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder='Enter your password'
+                    value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-gray-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 h-12 text-base pr-12"
                     required
@@ -175,9 +175,9 @@ const LoginScreen = () => {
                 </div>
               )}
 
-              <Button 
-                type='submit' 
-                variant='primary' 
+              <Button
+                type='submit'
+                variant='primary'
                 className='w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 border-0 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg'
                 disabled={isLoading || !isAgeVerified}
               >
@@ -187,8 +187,8 @@ const LoginScreen = () => {
               <div className="text-center">
                 <p className="text-gray-600">
                   Don't have an account?{' '}
-                  <Link 
-                    to='/register' 
+                  <Link
+                    to='/register'
                     className="text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200"
                   >
                     Sign up here

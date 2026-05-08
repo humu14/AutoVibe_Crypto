@@ -24,22 +24,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-connectDB();
-
-// Initialize encryption keys on startup
-initializeKeys().then(() => {
-  console.log('🔐 Encryption keys ready');
-}).catch(err => {
-  console.error('❌ Failed to initialize encryption keys:', err);
-});
-
-// Session cleanup — run every hour
-setInterval(() => {
-  cleanupExpiredSessions().catch(err => {
-    console.error('Session cleanup error:', err);
-  });
-}, 60 * 60 * 1000);
-
 // API Routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoute);
@@ -57,12 +41,30 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname,'frontend/dist')));
   app.get("*", (req, res) => res.sendFile(path.resolve(__dirname,'frontend','dist','index.html')));
 } else {
-  app.get('/', (req, res) => { 
-    res.send('API is running... 🔐 Secured with RSA + ECC encryption'); 
+  app.get('/', (req, res) => {
+    res.send('API is running... 🔐 Secured with RSA + ECC encryption');
   });
 }
 
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(port, () => console.log(`🚀 Server started on port ${port}`));
+// Connect DB and init keys before accepting requests
+async function startServer() {
+  await connectDB();
+  await initializeKeys();
+  console.log('🔐 Encryption keys ready');
+
+  setInterval(() => {
+    cleanupExpiredSessions().catch(err => {
+      console.error('Session cleanup error:', err);
+    });
+  }, 60 * 60 * 1000);
+
+  app.listen(port, () => console.log(`🚀 Server started on port ${port}`));
+}
+
+startServer().catch(err => {
+  console.error('❌ Server startup failed:', err);
+  process.exit(1);
+});

@@ -1,18 +1,4 @@
 /**
- * RSA Encryption Implementation from Scratch
- * Uses native JavaScript BigInt for large number arithmetic
- * No built-in crypto libraries used
- * 
- * Implements:
- * - Miller-Rabin primality testing
- * - Key generation (1024-bit default)
- * - Encryption/Decryption
- * - String encryption with chunking for long messages
- */
-
-// ==================== MATH UTILITIES ====================
-
-/**
  * Modular exponentiation: (base^exp) mod mod
  * Uses binary exponentiation (square-and-multiply)
  * @param {BigInt} base
@@ -174,7 +160,7 @@ function generatePrime(bits) {
  */
 function generateKeyPair(bitLength = 1024) {
   const halfBits = Math.floor(bitLength / 2);
-  
+
   // Generate two distinct large primes
   const p = generatePrime(halfBits);
   let q;
@@ -225,7 +211,7 @@ function generateKeyPair(bitLength = 1024) {
 function encrypt(message, publicKey) {
   const n = BigInt('0x' + publicKey.n);
   const e = BigInt('0x' + publicKey.e);
-  
+
   if (message >= n) {
     throw new Error('Message too large for key size');
   }
@@ -306,7 +292,7 @@ function getMaxChunkSize(publicKey) {
  */
 function encryptString(plaintext, publicKey) {
   if (!plaintext || plaintext.length === 0) return '';
-  
+
   const maxChunkSize = getMaxChunkSize(publicKey);
   const chunks = [];
 
@@ -328,7 +314,7 @@ function encryptString(plaintext, publicKey) {
  */
 function decryptString(ciphertext, privateKey) {
   if (!ciphertext || ciphertext.length === 0) return '';
-  
+
   try {
     const chunks = JSON.parse(ciphertext);
     let plaintext = '';
@@ -377,11 +363,11 @@ function verifySync(data, signatureHex, publicKey, sha256Fn) {
   const hashBigInt = BigInt('0x' + hash);
   const n = BigInt('0x' + publicKey.n);
   const reducedHash = hashBigInt % n;
-  
+
   const signature = BigInt('0x' + signatureHex);
   const e = BigInt('0x' + publicKey.e);
   const decrypted = modPow(signature, e, n);
-  
+
   return decrypted === reducedHash;
 }
 

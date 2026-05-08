@@ -13,6 +13,7 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
 import Product from '../models/productModel.js';
 import generateToken, { invalidateUserSessions } from '../utils/generateToken.js';
+import { decryptProductData } from '../utils/productCrypto.js';
 import { sha256 } from '../crypto/sha256.js';
 import { hashPassword, verifyPassword } from '../crypto/passwordHash.js';
 import { hmac, verifyHmac } from '../crypto/hmac.js';
@@ -429,8 +430,8 @@ const getFavoriteProducts = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(404).json({ success: false, error: "User not found" });
   }
-  const favoriteProducts = user.favoriteProducts;
-  res.status(200).json(favoriteProducts);
+  const decrypted = await Promise.all(user.favoriteProducts.map(decryptProductData));
+  res.status(200).json(decrypted);
 });
 
 // ==================== ADMIN ENDPOINTS ====================

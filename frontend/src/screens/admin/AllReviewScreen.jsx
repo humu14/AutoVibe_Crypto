@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Typography, Table, TableHead, TableBody, TableRow, TableCell, Paper, Button } from '@material-ui/core';
 import { useGetAllReviewsQuery, useDeleteReviewMutation } from '../../slices/reviewApiSlice.js';
+import { useGetAllProductQuery } from '../../slices/productsApiSlice.js';
 import Loader from '../../components/Loader.jsx';
 import Message from '../../components/Message.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ import ConfirmActionModal from '../../components/ConfirmActionModal.jsx';
 
 const AllReviewScreen = () => {
   const { data: reviews, refetch, isLoading, error } = useGetAllReviewsQuery();
+  const { data: products } = useGetAllProductQuery();
 
   useEffect(() => {
     refetch();
@@ -55,6 +57,10 @@ const AllReviewScreen = () => {
       />
     ));
   };
+
+  const productNameById = new Map(
+    (products || []).map((product) => [String(product._id), product.name || 'Unknown Product'])
+  );
 
   return (
     <>
@@ -147,7 +153,7 @@ const AllReviewScreen = () => {
                             >
                               <FaBox className="w-4 h-4" />
                               <span className="text-sm font-medium">
-                                {review.product.name || 'Unknown Product'}
+                                {productNameById.get(String(review.product._id)) || review.product.name || 'Unknown Product'}
                               </span>
                             </Link>
                           ) : (

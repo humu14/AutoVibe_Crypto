@@ -4,6 +4,7 @@ import ProductCard from '../components/ProductCard';
 import Grid from '@material-ui/core/Grid';
 import { useParams } from 'react-router-dom';
 import { useGetFavoriteQuery } from '../slices/userApiSlice';
+import { useGetAllProductQuery } from '../slices/productsApiSlice';
 import { useEffect, useState } from 'react';
 import Message from '../components/Message';
 import { LinkContainer } from 'react-router-bootstrap';
@@ -14,6 +15,7 @@ const FavoritesScreen = () => {
   const [isFavorite, setIsFavorite] = useState();
   const { id: userId } = useParams();
   const { data: favProducts, refetch: refetchFavProducts, isLoading: favIsLoading, error } = useGetFavoriteQuery();
+  const { data: allProducts, isLoading: productsLoading } = useGetAllProductQuery();
 
   useEffect(() => {
     refetchFavProducts();
@@ -25,6 +27,21 @@ const FavoritesScreen = () => {
       setIsFavorite(index !== -1);
     }
   }, [favProducts]);
+
+  const favoriteList = Array.isArray(favProducts)
+    ? favProducts
+    : Array.isArray(favProducts?.data)
+      ? favProducts.data
+      : [];
+
+  const favoriteIds = favoriteList
+    .map((item) => (item && typeof item === 'object' ? item._id : item))
+    .filter(Boolean)
+    .map(String);
+
+  const favoriteProducts = (allProducts || []).filter((product) =>
+    favoriteIds.includes(String(product._id))
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-16">
@@ -42,13 +59,13 @@ const FavoritesScreen = () => {
         </div>
 
         {/* Favorites Content */}
-        {favIsLoading ? (
+        {favIsLoading || productsLoading ? (
           <div className="flex justify-center items-center py-20">
             <Loader />
           </div>
         ) : error ? (
           <Message variant='danger'>{error?.data?.message || error?.error || 'An error occurred while loading favorites'}</Message>
-        ) : favProducts && favProducts.length === 0 ? (
+        ) : favoriteProducts.length === 0 ? (
           <div className="text-center py-20">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 max-w-md mx-auto">
               <FaHeart className="w-16 h-16 text-gray-400 mx-auto mb-6" />
@@ -79,7 +96,7 @@ const FavoritesScreen = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">
-                    You have <span className="font-semibold text-gray-900">{favProducts?.length || 0}</span> favorite product{favProducts?.length !== 1 ? 's' : ''}
+                    You have <span className="font-semibold text-gray-900">{favoriteProducts.length}</span> favorite product{favoriteProducts.length !== 1 ? 's' : ''}
                   </span>
                   <div className="flex items-center gap-2">
                     <FaHeart className="w-5 h-5 text-red-500" />
@@ -91,8 +108,8 @@ const FavoritesScreen = () => {
 
             {/* Favorites Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {favProducts &&
-                favProducts.map((product) => (
+              {favoriteProducts &&
+                favoriteProducts.map((product) => (
                   <div key={product._id} className="transform hover:scale-105 transition-transform duration-300">
                     <ProductCard product={product} favFlag={isFavorite} />
                   </div>

@@ -10,6 +10,7 @@ import { getActiveKey, getKeyByVersion, getHmacSecret } from '../crypto/keyManag
 import * as eccCrypto from '../crypto/ecc.js';
 import * as rsaCrypto from '../crypto/rsa.js';
 import { hmac, verifyHmac } from '../crypto/hmac.js';
+import { decryptProductName } from '../utils/productCrypto.js';
 
 // ==================== HELPERS ====================
 
@@ -200,13 +201,17 @@ const deleteReview = asyncHandler(async (req, res) => {
 
 // GET all reviews (admin)
 const getAllReviews = asyncHandler(async (req, res) => {
-  const reviews = await Review.find({}).populate('user', 'name encryptionKeyVersion').populate('product', 'name rating');
+  const reviews = await Review.find({}).populate('user', 'name encryptionKeyVersion').populate('product', 'name rating encryptionKeyVersion updatedAt');
 
   if (reviews) {
     const decryptedReviews = [];
     for (const review of reviews) {
       const decrypted = await decryptReviewData(review);
       const reviewWithUser = await decryptReviewUserName(decrypted);
+      // Decrypt populated product name
+      if (reviewWithUser.product && reviewWithUser.product.name) {
+        reviewWithUser.product = await decryptProductName(reviewWithUser.product);
+      }
       decryptedReviews.push(reviewWithUser);
     }
     res.status(200).json(decryptedReviews);

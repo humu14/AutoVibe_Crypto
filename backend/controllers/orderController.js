@@ -10,6 +10,7 @@ import User from '../models/userModel.js';
 import { getActiveKey, getKeyByVersion, getHmacSecret } from '../crypto/keyManager.js';
 import * as rsaCrypto from '../crypto/rsa.js';
 import { hmac, verifyHmac } from '../crypto/hmac.js';
+import { decryptProductData, decryptProductName } from '../utils/productCrypto.js';
 
 // ==================== HELPERS ====================
 
@@ -151,7 +152,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
     }
     if (product.countInStock < item.qty) {
       res.status(400);
-      throw new Error(`Insufficient stock for ${product.name}. Available: ${product.countInStock}`);
+      throw new Error(`Insufficient stock for ${item.name || item._id}. Available: ${product.countInStock}`);
     }
   }
 
@@ -287,11 +288,12 @@ const checkStockAvailability = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Product not found');
   }
+  const decrypted = await decryptProductData(product);
   res.json({
     isAvailable: product.countInStock >= quantity,
     availableStock: product.countInStock,
     requestedQuantity: quantity,
-    productName: product.name
+    productName: decrypted.name
   });
 });
 
@@ -309,9 +311,10 @@ const checkCartStockAvailability = asyncHandler(async (req, res) => {
       continue;
     }
     const isAvailable = product.countInStock >= item.qty;
+    const decrypted = await decryptProductData(product);
     stockCheckResults.push({
       productId: product._id,
-      productName: product.name,
+      productName: decrypted.name,
       isAvailable,
       availableStock: product.countInStock,
       requestedQuantity: item.qty,
@@ -461,11 +464,12 @@ const getTopProducts = asyncHandler(async (req, res) => {
     .slice(0, 5);
   const productIds = top5Products.map(p => p.productId);
   const products = await Product.find({ _id: { $in: productIds } });
+  const decryptedProducts = await Promise.all(products.map(decryptProductData));
   const top5ProductsData = top5Products.map(product => {
-    const details = products.find(p => p._id.toString() === product.productId);
+    const details = decryptedProducts.find(p => p._id.toString() === product.productId);
     return {
       productId: details?._id || product.productId,
-      productName: details?.name || "Product not found",
+      productName: details?.name || 'Product not found',
       quantitySold: product.quantitySold,
     };
   });

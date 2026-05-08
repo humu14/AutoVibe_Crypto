@@ -7,11 +7,11 @@
 import Key from '../models/keyModel.js';
 import * as rsa from './rsa.js';
 import * as ecc from './ecc.js';
-import { sha256 } from './sha256.js';
 
 // In-memory cache for active keys (avoid DB queries on every request)
 let keyCache = {};
 let keyEncryptionPair = null;
+let warnedUnprotectedPrivateKeyStorage = false;
 
 function hasPersistentKeyEncryptionConfig() {
   return Boolean(
@@ -46,6 +46,14 @@ function getKeyEncryptionPair() {
 }
 
 function protectPrivateKeyAtRest(privateKey, algorithm) {
+  if (!hasPersistentKeyEncryptionConfig()) {
+    if (!warnedUnprotectedPrivateKeyStorage) {
+      console.warn('KEY_ENCRYPTION_* environment variables missing. Storing private keys without at-rest encryption.');
+      warnedUnprotectedPrivateKeyStorage = true;
+    }
+    return privateKey;
+  }
+
   const pair = getKeyEncryptionPair();
   return {
     encrypted: true,
@@ -212,7 +220,7 @@ async function refreshKeyCache() {
  */
 async function getActiveKey(algorithm, purpose) {
   const cacheKey = `${algorithm}:${purpose}`;
-  
+
   // Try cache first
   if (keyCache[cacheKey]) {
     return keyCache[cacheKey];
@@ -379,9 +387,9 @@ async function getKeyStatus() {
   const active = keys.filter(k => k.status === 'ACTIVE').length;
   const rotated = keys.filter(k => k.status === 'ROTATED').length;
   const revoked = keys.filter(k => k.status === 'REVOKED').length;
-  const expiringSoon = keys.filter(k => 
-    k.status === 'ACTIVE' && 
-    k.expiresAt && 
+  const expiringSoon = keys.filter(k =>
+    k.status === 'ACTIVE' &&
+    k.expiresAt &&
     k.expiresAt < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   ).length;
 
